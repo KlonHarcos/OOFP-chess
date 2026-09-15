@@ -1,0 +1,54 @@
+plugins {
+    id 'scala'
+    id 'idea'
+    id 'application'
+}
+
+
+application {
+    mainClass.set( 'game.ChessGame')
+}
+
+
+
+
+ext {
+    scalaMajorVersion = '3.3'
+    scalaVersion = "${scalaMajorVersion}.8"
+}
+
+
+repositories {
+
+    mavenCentral()
+}
+
+sourceSets.main.scala.srcDirs = ['src']
+sourceSets.test.scala.srcDirs = ['test']
+
+
+dependencies {
+    implementation "org.processing:core:4.5.6"
+    implementation("org.scala-lang:scala3-compiler_3:${scalaVersion}")
+    implementation("org.scala-lang:scala3-library_3:${scalaVersion}")
+    
+    testImplementation('junit:junit:4.13.2')
+    testImplementation("org.scalatest:scalatest_3:3.2.19")
+    testImplementation("org.scalatestplus:junit-4-13_3:3.2.19.0")
+}
+
+
+task zip(type: Zip) {
+    group = "prepareZipForSubmit"
+    description = "Zip your code for submission to Codegrade"
+
+    // To make sure you can always run this task
+    outputs.upToDateWhen { false }
+    dependsOn assemble
+    dependsOn testClasses
+    from fileTree(dir: '.')
+    include 'src/snake/logic/**.scala'
+
+    archiveFileName = 'chess.zip'
+    destinationDirectory = layout.buildDirectory.dir("$projectDir")
+}
