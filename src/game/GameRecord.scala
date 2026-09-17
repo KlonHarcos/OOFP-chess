@@ -4,7 +4,6 @@ import scala.compiletime.ops.boolean
 import dotty.tools.dotc.core.StdNames.str
 
 case class GameRecord(  board: Board,
-                        nextToMove: String,
                         castlingRights: String,
                         enPassantSquare: Option[Tile],
                         halfMoveClock: Int,
@@ -22,6 +21,10 @@ case class GameRecord(  board: Board,
             case None => "-"
             case Some(value) => value.name
         }
+        val nextToMove = board.hasTurn match {
+            case "Light" => "w"
+            case "Dark" => "b"
+        }
         Seq[String](board.toString, nextToMove, castlingRights, enPass, halfMoveClock.toString, fullMoveClock.toString).mkString(" ")
     }
      
@@ -33,6 +36,10 @@ object GameRecord {
         val splitFen = fen.split(" ")
         val boardRows = splitFen(0).split("/")
         val nextToMove = splitFen(1)
+        board.hasTurn = nextToMove match {
+            case "w" => "Light"
+            case "b" => "Dark"
+        }
         val castlingRights = splitFen(2)
         val enPassantSquare = splitFen(3)
         val halfMoveClock = splitFen(4)
@@ -43,7 +50,7 @@ object GameRecord {
             var colNum: Int = 0
             def colLetter: Char = ('a' + colNum).toChar
             for (c <- rowStr) {
-                if (c.isDigit) colNum += c.toString.toInt
+                if (c.isDigit) colNum += c.asDigit
                 else {
                     val p: Piece = Piece.getPiecebyName(c)
                     val strTileName = colLetter.toString + rowNum
@@ -53,7 +60,7 @@ object GameRecord {
             }
         }
 
-        GameRecord(board, nextToMove, castlingRights, board.getTile(enPassantSquare), halfMoveClock.toInt, fullMoveClock.toInt)
+        GameRecord(board, castlingRights, board.getTile(enPassantSquare), halfMoveClock.toInt, fullMoveClock.toInt)
     }
 
     

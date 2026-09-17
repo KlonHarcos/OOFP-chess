@@ -1,5 +1,7 @@
 package game
 
+import dotty.tools.dotc.util.optional
+
 type Movement = Tile => Board => Seq[Tile]
 
 object Movement {
@@ -14,17 +16,23 @@ object Movement {
 abstract class Piece() {
     val shade: Shade
     val baseName: String
-    val movePattern: Seq[Movement]
+    def movePattern: Seq[Movement]
     var hasMoved: Boolean = false
 
     def name: String = shade match {
         case "Dark" => baseName.toLowerCase()
         case "Light" => baseName.toUpperCase()
     }
+
+    def hasSameShade(piece: Option[Piece]): Boolean = piece match {
+        case Some(p) if p.shade == this.shade => true 
+        case None => false
+        case _ => false
+    }
 }
 case class King(shade: Shade) extends Piece {
     val baseName = "k"
-    val movePattern: Seq[Movement] = Seq(
+    def movePattern: Seq[Movement] = Seq(
         Movement(_.row, 1),
         Movement(_.col, 1),
         Movement(_.diagonal, 1),
@@ -32,7 +40,7 @@ case class King(shade: Shade) extends Piece {
 }
 case class Queen(shade: Shade) extends Piece {
     val baseName = "q"
-    val movePattern: Seq[Movement] = Seq(
+    def movePattern: Seq[Movement] = Seq(
         Movement(_.row),
         Movement(_.col),
         Movement(_.diagonal),
@@ -40,28 +48,29 @@ case class Queen(shade: Shade) extends Piece {
 }
 case class Rook(shade: Shade) extends Piece {
     val baseName = "r"
-    val movePattern: Seq[Movement] = Seq(
+    def movePattern: Seq[Movement] = Seq(
         Movement(_.row),
         Movement(_.col)
     )
 }
 case class Knight(shade: Shade) extends Piece {
     val baseName = "n"
-    val movePattern: Seq[Movement] = Seq(
+    def movePattern: Seq[Movement] = Seq(
         Movement(_.pony),
     )
 }
 case class Bishop(shade: Shade) extends Piece {
     val baseName = "b"
-    val movePattern: Seq[Movement] = Seq(
+    def movePattern: Seq[Movement] = Seq(
         Movement(_.diagonal)
     )
 }
 case class Pawn(shade: Shade) extends Piece {
     val baseName = "p"
-    val movePattern: Seq[Movement] = hasMoved match {
-        case true  => Seq(Movement(_.forward, shade, 1))
-        case false => Seq(Movement(_.forward, shade, 2))
+    def movePattern: Seq[Movement] = {
+        val dist = if hasMoved then 1 else 2
+        println("dist :" + dist)
+        Seq(Movement(_.forward, shade, dist))
     }
 }
 
@@ -77,4 +86,12 @@ object Piece {
             case 'p' => Pawn(shade)
         }
     }
+
+    def hasSameColor(a: Option[Piece], b: Option[Piece]) = {
+        (a, b) match {
+            case (Some(p), Some(p2)) if p.shade == p2.shade => true
+            case _ => false
+        }
+    }
 }
+

@@ -8,6 +8,7 @@ import engine.graphics.{HighlightGreen, LowHighlightGreen}
 import scala.collection.mutable.Map
 
 def FenStart = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+def fenEx = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
 
 class ChessGame extends ChessBase {
     val board = new Board(boardSize, appSize)
@@ -45,14 +46,17 @@ class ChessGame extends ChessBase {
         val currHighlight: Option[Tile] = highlightedTile
         highlightedTile = board.getTile(mouse)
         (currHighlight, highlightedTile) match {
-            case (Some(from), Some(to)) if from == to => highlightedTile = None; validMoveHighlights = Seq.empty[Tile]
-            case (Some(from), Some(to)) => board.movePiece(from, to); highlightedTile = None
+            case (Some(from), Some(to)) if from == to => highlightedTile = None
+            case (Some(from), Some(to)) => val res = board.movePiece(from, to); if res then highlightedTile = None
             case _ => ()
         }
+        highlightedTile.foreach(t => t.piece.foreach(p => println(p.hasMoved)))
+        validMoveHighlights = highlightedTile.match {
+            case Some(t) => board.getValidMoves(t)
+            case None => Seq.empty[Tile]
 
-        highlightedTile.foreach(t => println(t))
-
-        highlightedTile.foreach(t => validMoveHighlights = board.getValidMoves(t))
+        }
+            
         println("highlighted possible moves: " + validMoveHighlights)
         
     }

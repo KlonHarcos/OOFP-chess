@@ -8,6 +8,10 @@ import engine.graphics.Rectangle
 type Shade = "Dark" | "Light"
 
 case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece] = None) {
+    def rank: Int = name(1).asDigit
+    def file: Char = name(0)
+
+
     def isInside(pos: Position): Boolean = {
         if (pos.x < rect.pos.x || pos.y < rect.pos.y) return false
         if (pos.x > rect.pos.x + rect.size || pos.y > rect.pos.y + rect.size) return false
@@ -23,11 +27,24 @@ case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece
     }
 
     def forward(shade: Shade, range: Int = -1)(board: Board): Seq[Tile] = {
+        def pawnMove(dir1: Direction, dir2: Direction, dir3: Direction) = {
+            val forward = getTilesinDir(dir1, board, range).filter(t => !t.piece.isDefined)
+            val captures = (getTilesinDir(dir2, board, 1) ++ 
+                            getTilesinDir(dir3, board, 1)
+                            ).filter(t => t.piece.isDefined || board.enPassantTile.contains(t))
+            forward ++ captures
+        }
         shade match {
-            case "Dark" => getTilesinDir(South, board, range)
-            case "Light" => getTilesinDir(North, board, range)
+            case "Dark" => {
+                pawnMove(South, SouthEast, SouthWest)
+            }
+            case "Light" => {
+                pawnMove(North, NorthEast, NorthWest)
+            }
         }
     }
+
+    
 
     def col(range: Int = -1)(board: Board): Seq[Tile] = {
         val upRes = getTilesinDir(North, board, range)
@@ -44,11 +61,21 @@ case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece
     }
 
     def pony(range: Int = -1)(board: Board): Seq[Tile] = {
-        Seq.empty[Tile]
+        val options = Seq(
+            (1,2)  , (2,1),
+            (-1,-2), (-2,-1),
+            (-1,2) , (2,-1),
+            (1,-2) , (-2,1)
+        )
+
+        options.flatMap{case (f, r) =>
+            board.getTile((f+file).toChar,(r + rank))
+        }
     }
 
     def getTilesinDir(dir: Direction, board: Board, range: Int = -1): Seq[Tile] = {
         board.getTile(neighborName(dir)) match {
+            case Some(t) if t.piece.isDefined => Seq[Tile](t)
             case Some(t) => t.getTilesRec(dir, board, range)
             case None => Seq.empty[Tile]
         }
@@ -58,6 +85,7 @@ case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece
         val newRange = range - 1
         board.getTile(neighborName(dir)) match {
             case Some(t) if (newRange == 0) => Seq[Tile](this)
+            case Some(t) if t.piece.isDefined => Seq[Tile](this, t)
             case Some(t) => this +: t.getTilesRec(dir, board, newRange) 
             case None  => Seq[Tile](this)
         }

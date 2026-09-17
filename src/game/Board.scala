@@ -5,12 +5,19 @@ import scala.collection.mutable.Map
 
 class Board(val boardSize: Int, screenDims: Int) {
 
+    var hasTurn: Shade = "Light"
+    def changeTurn() = if hasTurn == "Light" then hasTurn = "Dark" else hasTurn = "Light"
+    var enPassantTile: Option[Tile] = None
+    var pawnJumpTile: Option[Tile] = None
+
     def getValidMoves(tile: Tile): Seq[Tile] = {
-        println("gettingValidMove")
-        tile.piece match {
+        val currPiece = tile.piece
+        val possible = tile.piece match {
+            case Some(p) if p.shade != hasTurn => Seq.empty[Tile]
             case None => Seq.empty[Tile]
             case Some(p) => p.movePattern.flatMap(f  => f(tile)(this))
         }
+        possible.filterNot(t => Piece.hasSameColor(t.piece, currPiece))
     }
 
     def placePiece(tile: Tile, p: Option[Piece]) = {
@@ -21,16 +28,36 @@ class Board(val boardSize: Int, screenDims: Int) {
         tiles(tile) = tiles(tile).copy(piece = p)
     }
 
-    def movePiece(from: Tile, to: Tile): Unit = {
-        (from.piece, to.piece) match {
-            case (Some(atck), Some(prot)) if atck.shade == prot.shade => return
-            case (Some(_), None) |
-                 (Some(_), Some(_)) =>
-                placePiece(to, from.piece)
-                placePiece(from, None)
-            case _ => return
-        }
-        println(this.toString())
+    def movePiece(from: Tile, to: Tile): Boolean = {
+        val options = getValidMoves(from)
+        if (options.contains(to)) {
+            val piece = from.piece
+            if (piece.exists(_.isInstanceOf[Pawn]) && enPassantTile.contains(to)) {
+                pawnJumpTile.foreach(placePiece(_, None))
+            }
+
+            placePiece(to, piece)
+            placePiece(from, None)
+
+            handleEnPassantOption(from, to)
+            piece.foreach(_.hasMoved = true)
+            
+            changeTurn()
+            true
+        } else false
+        
+        
+    }
+
+    def handleEnPassantOption(from: Tile, to: Tile): Unit = from.piece match {
+        case Some(p @ Pawn(shade)) if !p.hasMoved && (from.rank - to.rank) % 2 == 0  
+            => {
+                pawnJumpTile = Some(to)
+                enPassantTile = getTile(shade match
+                case "Dark" => from.neighborName(South)
+                case "Light" => from.neighborName(North))
+            }
+        case _ => pawnJumpTile = None; enPassantTile = None 
     }
     
     def tileSize = screenDims.toFloat / boardSize
@@ -77,7 +104,7 @@ class Board(val boardSize: Int, screenDims: Int) {
     }
 
     def notationStot(notation: String): (Char, Int) =
-        (notation(0), notation(1).toString.toInt)
+        (notation(0), notation(1).asDigit)
 
     def getShade(notation: String): Shade = {
         val (l, n) = notationStot(notation)

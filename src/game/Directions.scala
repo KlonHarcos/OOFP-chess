@@ -2,7 +2,7 @@ package game
 
 abstract class Direction(l: Int, n: Int) {
     def getTileName(str: String): String = {
-        val (letter, number) = (str(0), str(1).toString.toInt)
+        val (letter, number) = (str(0), str(1).asDigit)
         (letter + l).toChar.toString + (number + n).toString 
     }
 }

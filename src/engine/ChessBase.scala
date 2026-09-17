@@ -9,7 +9,7 @@ class ChessBase extends PApplet {
 
     val piecePath: String = "src/images"
 
-    def appSize: Int = 500 
+    def appSize: Int = 1000 
     def boardSize: Int = 8
 
     lazy val pieceImgMap: Map[String, PImage] = {
