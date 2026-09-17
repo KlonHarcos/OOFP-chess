@@ -30,7 +30,7 @@ class ChessBase extends PApplet {
         size(appSize, appSize)
     }
 
-    override def setup() = {
+    final override def setup() = {
         val triggerForLazyMap = pieceImgMap
         setupGame()
         smooth()
