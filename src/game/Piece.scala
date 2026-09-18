@@ -20,8 +20,8 @@ abstract class Piece() {
     var hasMoved: Boolean = false
 
     def name: String = shade match {
-        case "Dark" => baseName.toLowerCase()
-        case "Light" => baseName.toUpperCase()
+        case Dark => baseName.toLowerCase()
+        case Light => baseName.toUpperCase()
     }
 
     def hasSameShade(piece: Option[Piece]): Boolean = piece match {
@@ -33,9 +33,7 @@ abstract class Piece() {
 case class King(shade: Shade) extends Piece {
     val baseName = "k"
     def movePattern: Seq[Movement] = Seq(
-        Movement(_.row, 1),
-        Movement(_.col, 1),
-        Movement(_.diagonal, 1),
+        Movement(_.king, shade, 1)
     )
 }
 case class Queen(shade: Shade) extends Piece {
@@ -68,15 +66,14 @@ case class Bishop(shade: Shade) extends Piece {
 case class Pawn(shade: Shade) extends Piece {
     val baseName = "p"
     def movePattern: Seq[Movement] = {
-        val dist = if hasMoved then 1 else 2
-        println("dist :" + dist)
-        Seq(Movement(_.forward, shade, dist))
+        def dist = if hasMoved then 1 else 2
+        Seq(Movement(_.pawn, shade, dist))
     }
 }
 
 object Piece {
     def getPiecebyName(name: Char): Piece = {
-        val shade: Shade = if (name.isUpper) "Light" else "Dark"
+        val shade: Shade = if (name.isUpper) Light else Dark
         name.toLower match {
             case 'k' => King(shade)
             case 'q' => Queen(shade)

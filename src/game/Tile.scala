@@ -5,7 +5,10 @@ import engine.graphics.Green
 import engine.graphics.Position
 import engine.graphics.Rectangle
 
-type Shade = "Dark" | "Light"
+abstract trait Shade {val other: Shade}
+case object Dark extends Shade {val other = Light}
+case object Light extends Shade{val other = Dark}
+
 
 case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece] = None) {
     def rank: Int = name(1).asDigit
@@ -26,22 +29,27 @@ case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece
         rightRes ++ leftRes
     }
 
-    def forward(shade: Shade, range: Int = -1)(board: Board): Seq[Tile] = {
+    def pawn(shade: Shade, range: Int = -1)(board: Board): Seq[Tile] = {
         def pawnMove(dir1: Direction, dir2: Direction, dir3: Direction) = {
             val forward = getTilesinDir(dir1, board, range).filter(t => !t.piece.isDefined)
             val captures = (getTilesinDir(dir2, board, 1) ++ 
                             getTilesinDir(dir3, board, 1)
-                            ).filter(t => t.piece.isDefined || board.enPassantTile.contains(t))
+                            ).filter(t => t.piece.isDefined || board.enPassantMove.contains(t))
             forward ++ captures
         }
         shade match {
-            case "Dark" => {
+            case Dark => {
                 pawnMove(South, SouthEast, SouthWest)
             }
-            case "Light" => {
+            case Light => {
                 pawnMove(North, NorthEast, NorthWest)
             }
         }
+    }
+
+    def king(shade: Shade, range: Int = 1)(board: Board): Seq[Tile] = {
+        val allMoves = col(1)(board) ++ row(1)(board) ++ diagonal(1)(board)
+        allMoves.filterNot(t => board.isUnderAttack(shade, t))
     }
 
     

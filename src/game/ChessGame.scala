@@ -5,6 +5,7 @@ import processing.core.PApplet
 import engine.graphics.Rectangle
 import engine.graphics.Position
 import engine.graphics.{HighlightGreen, LowHighlightGreen}
+import game.{Shade, Light, Dark}
 import scala.collection.mutable.Map
 
 def FenStart = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -14,8 +15,8 @@ class ChessGame extends ChessBase {
     val board = new Board(boardSize, appSize)
     val chessLogic = new ChessLogic(board, record)
     val record = GameRecord(FenStart, board)
-    val player1: Player = new Player("Light")
-    val player2: Player = new Player("Dark")
+    val player1: Player = new Player(Light)
+    val player2: Player = new Player(Dark)
 
     var highlightedTile: Option[Tile] = None
     var validMoveHighlights: Seq[Tile] = Seq.empty[Tile]
@@ -47,18 +48,14 @@ class ChessGame extends ChessBase {
         highlightedTile = board.getTile(mouse)
         (currHighlight, highlightedTile) match {
             case (Some(from), Some(to)) if from == to => highlightedTile = None
-            case (Some(from), Some(to)) => val res = board.movePiece(from, to); if res then highlightedTile = None
+            case (Some(from), Some(to)) => val res = board.tryMove(from, to); if res then highlightedTile = None
             case _ => ()
         }
-        highlightedTile.foreach(t => t.piece.foreach(p => println(p.hasMoved)))
-        validMoveHighlights = highlightedTile.match {
-            case Some(t) => board.getValidMoves(t)
-            case None => Seq.empty[Tile]
-
-        }
-            
-        println("highlighted possible moves: " + validMoveHighlights)
-        
+        validMoveHighlights = Seq.empty[Tile] 
+        highlightedTile.foreach(t => 
+            t.piece.foreach(p => 
+                if p.shade == board.hasTurn then 
+                    validMoveHighlights = board.getPossibleTargetTile(t)))
     }
 
 

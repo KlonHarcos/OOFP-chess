@@ -12,20 +12,17 @@ case class GameRecord(  board: Board,
 
     var moves: List[String] = List[String]()
 
-    def castleBlackQueen(): Boolean = castlingRights.contains('q')
-    def castleBlackKing(): Boolean = castlingRights.contains('k')
-    def castleWhiteQueen(): Boolean = castlingRights.contains('K')
-    def castleWhiteKing(): Boolean = castlingRights.contains('Q')
     override def toString(): String = {
         val enPass: String = enPassantSquare match {
             case None => "-"
             case Some(value) => value.name
         }
         val nextToMove = board.hasTurn match {
-            case "Light" => "w"
-            case "Dark" => "b"
+            case Light => "w"
+            case Dark => "b"
         }
-        Seq[String](board.toString, nextToMove, castlingRights, enPass, halfMoveClock.toString, fullMoveClock.toString).mkString(" ")
+
+        Seq[String](board.toString, nextToMove, board.castlingRights.toString, enPass, halfMoveClock.toString, fullMoveClock.toString).mkString(" ")
     }
      
 }
@@ -37,8 +34,8 @@ object GameRecord {
         val boardRows = splitFen(0).split("/")
         val nextToMove = splitFen(1)
         board.hasTurn = nextToMove match {
-            case "w" => "Light"
-            case "b" => "Dark"
+            case "w" => Light
+            case "b" => Dark
         }
         val castlingRights = splitFen(2)
         val enPassantSquare = splitFen(3)

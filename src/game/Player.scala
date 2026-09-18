@@ -1,5 +1,6 @@
 package game
 
+
 class Player(val shade: Shade) {
     
 }
