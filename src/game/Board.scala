@@ -6,11 +6,6 @@ import scala.collection.mutable.Map
 import scala.compiletime.ops.boolean
 import dotty.tools.dotc.semanticdb.SymbolInformation.Property.CASE
 
-sealed trait CastlingSide
-case object KingSide extends CastlingSide
-case object QueenSide extends CastlingSide
-
-
 case class Move(from: Tile, to: Tile, isCastles: Option[Move] = None, isEnPassant: Option[Tile] = None) {
     def ==(f: Tile, t: Tile): Boolean = {
         this.from == f && this.to == t
@@ -19,64 +14,6 @@ case class Move(from: Tile, to: Tile, isCastles: Option[Move] = None, isEnPassan
 
 case class enPassant(pawnTarget: Tile, pawnToRemove: Tile)
 
-case class CastlingRights(
-    whiteKing: Boolean = true,
-    whiteQueen: Boolean = true,
-    blackKing: Boolean = true,
-    blackQueen: Boolean = true
-) {
-    def getMove(shade: Shade, side: CastlingSide, board: Board): Move = {
-        val Seq(kf, kt, rf, rt) = ((shade, side) match {
-            case (Dark, KingSide) =>  Seq("e8", "g8", "h8", "f8")
-            case (Dark, QueenSide) => Seq("e8", "c8", "a8", "d8")
-            case (Light, KingSide) => Seq("e1", "g1", "h1", "f1")
-            case (Light, QueenSide) => Seq("e1", "c1", "a1", "d1")
-            case input => throw new IllegalArgumentException(s"Unexpected input: $input")
-        }).map(board.getTileUnsafe(_))
-        Move(kf, kt, isCastles = Some(Move(rf, rt)))
-    }
-
-    def setAll(value: Boolean): CastlingRights = {
-        this.copy(blackKing = value, whiteKing = value, blackQueen = value, whiteQueen = value)
-    }
-    def set(shade: Shade, side: CastlingSide, value: Boolean = false): CastlingRights = {
-        (shade, side) match {
-            case (Dark, KingSide) => this.copy(blackKing = value)
-            case (Dark, QueenSide) => this.copy(blackQueen = value)
-            case (Light, KingSide) => this.copy(whiteKing = value)
-            case (Light, QueenSide) => this.copy(whiteQueen = value)
-            case input => throw new IllegalArgumentException(s"Unexpected input: $input")
-        }
-    }
-
-    def get(shade: Shade, side: CastlingSide): Boolean = (shade, side) match {
-        case (Light, KingSide) => whiteKing
-        case (Light, QueenSide) => whiteQueen
-        case (Dark, KingSide) =>  blackKing
-        case (Dark, QueenSide) => blackQueen
-        case input => throw new IllegalArgumentException(s"Unexpected input: $input")
-
-    }
-
-    override def toString() = {
-        val str = Seq((whiteKing, "K"), (whiteQueen, "Q"), (blackKing, "k"), (blackQueen, "q")).map{ case (b, s) =>
-            if b then s else ""
-        }.mkString
-
-        if str.isEmpty then "-" else str
-    }
-
-    def fromString(str: String): CastlingRights = {
-        if str == "-" then return CastlingRights(false, false, false, false)
-        var right = CastlingRights()
-        str.foreach{c => 
-            val side = if c.toLower == 'k' then KingSide else QueenSide
-            val shade: Shade = if c.isLower then Dark else Light
-            right = right.set(shade, side)
-        }
-        right
-    }
-}
 
 class Board(val tiles: Map[String, Tile]) {
     def deepCopy(): Board = {
@@ -126,9 +63,6 @@ class Board(val tiles: Map[String, Tile]) {
                 case _ => ()
             }
         }
-
-        //println("dark vision: " + visionDark)
-        //println("light vision " + visionLight)
     }
 
     def hasStartingPiece(str: String): Boolean = { //TODO: decide to keep or discard currently unused
@@ -138,10 +72,6 @@ class Board(val tiles: Map[String, Tile]) {
             case _ => false
         }
     }
-
-    def getEnPassantTile(): Option[Tile] = enPassantMove match
-        case None => None
-        case Some(e) => Some(e.pawnTarget)
 
     def isUnderAttack(shadeUnderAttack: Shade, tile: Tile): Boolean = {
         getVision(shadeUnderAttack.other).contains(tile)
@@ -344,8 +274,8 @@ class Board(val tiles: Map[String, Tile]) {
 
     def getTiles(): Seq[Tile] = Seq.from(tiles.values).sortBy(_.name).toSeq
 
-    def getPieces(shade: Shade): Seq[Piece] = getTiles().flatMap(t => t.piece).filter(_.shade == shade)
-    def getPieces(piece: Piece): Seq[Piece] = getPieces(piece.shade).filter(_ == piece)
+    //def getPieces(shade: Shade): Seq[Piece] = getTiles().flatMap(t => t.piece).filter(_.shade == shade)
+    //def getPieces(piece: Piece): Seq[Piece] = getPieces(piece.shade).filter(_ == piece)
 
     override def toString(): String = {var strBuilder = ""
         val rankList = getRanks().sortBy(s => s(0).name).reverse
@@ -400,10 +330,6 @@ object Board {
         }
         new Board(tiles)
     }
-
-    
-
-    
 
     def getShade(notation: String): Shade = {
         val (l, n) = notationStot(notation)
