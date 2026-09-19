@@ -10,11 +10,10 @@ sealed trait CastlingSide
 case object KingSide extends CastlingSide
 case object QueenSide extends CastlingSide
 
-type TileName = String
 
-case class Move(from: TileName, to: TileName, isCastles: Option[Move] = None, isEnPassant: Option[TileName] = None) {
+case class Move(from: Tile, to: Tile, isCastles: Option[Move] = None, isEnPassant: Option[Tile] = None) {
     def ==(f: Tile, t: Tile): Boolean = {
-        this.from == f.name && this.to == t.name
+        this.from == f && this.to == t
     }
 }
 
@@ -34,7 +33,7 @@ case class CastlingRights(
             case (Light, QueenSide) => Seq("e1", "c1", "a1", "d1")
             case input => throw new IllegalArgumentException(s"Unexpected input: $input")
         }).map(board.getTileUnsafe(_))
-        Move(kf.name, kt.name, isCastles = Some(Move(rf.name, rt.name)))
+        Move(kf, kt, isCastles = Some(Move(rf, rt)))
     }
 
     def setAll(value: Boolean): CastlingRights = {
@@ -173,12 +172,12 @@ class Board(val tiles: Map[String, Tile]) {
         return Some(castlingRights.getMove(shade, side, this))
     }
 
-    def getValidCastles(shade: Shade): Seq[Move] = {
+    def getLegalCastles(shade: Shade): Seq[Move] = {
         Seq(getCastleMove(shade, KingSide), getCastleMove(shade, QueenSide)).flatMap(identity)
     }
 
-    def getPossibleTargetTile(tile: Tile): Seq[Tile] = getLegalMoves(tile).map(m => getTileUnsafe(m.to))
-    def getTilesInVision(tile: Tile) = getPseudoLegalMoves(tile).map(m => getTileUnsafe(m.to))
+    def getPossibleTargetTile(tile: Tile): Seq[Tile] = getLegalMoves(tile).map(m => m.to)
+    def getTilesInVision(tile: Tile) = getPseudoLegalMoves(tile).map(m => m.to)
 
     def getPseudoLegalMoves(tile: Tile): Seq[Move] = {
         val currPiece = tile.piece
@@ -188,7 +187,7 @@ class Board(val tiles: Map[String, Tile]) {
                 p.movePattern.flatMap(f  => f(tile)(this))}
         }
         possible.filterNot(t => Piece.hasSameColor(t.piece, currPiece))
-                    .map{to => Move(tile.name, to.name)}
+                    .map{to => Move(tile, to)}
     }
 
     def getLegalMoves(tile: Tile): Seq[Move] = {
@@ -198,8 +197,8 @@ class Board(val tiles: Map[String, Tile]) {
         val legal = pseudoLegal.filterNot(isDangerous(_))
         
         currPiece match {
-            case Some(King(s, _)) => legal ++ getValidCastles(s)
-            case Some(Pawn(s, _)) => legal ++  
+            case Some(King(s, _)) => legal ++ getLegalCastles(s)
+            case Some(Pawn(_, _)) => legal ++ getLegalEnPassant(tile)
             case _ => legal                 
         }
     }
@@ -209,7 +208,8 @@ class Board(val tiles: Map[String, Tile]) {
             case None => Seq.empty[Move]
             case Some(enPass) => {
                 val diff = (enPass.pawnToRemove.file - tile.file)
-                if (diff == 1 || diff == -1) && tile.rank == enPass.pawnToRemove.rank then Seq(Move(tile, enPass.pawnTarget, isEnPassant = Some(enPass.pawnToRemove)))
+                if ((diff == 1 || diff == -1) && tile.rank == enPass.pawnToRemove.rank) then Seq(Move(tile, enPass.pawnTarget, isEnPassant = Some(enPass.pawnToRemove)))
+                else Seq.empty[Move]
             }
         }
     }
@@ -261,7 +261,7 @@ class Board(val tiles: Map[String, Tile]) {
 
     def movePiece(move: Move): Unit = {
         def makeMove(m: Move): Unit = {
-            val piece: Option[Piece] = getTileUnsafe(m.from).piece match {
+            val piece: Option[Piece] = m.from.piece match {
                 case Some(p) => Some(p.move())
                 case _ => None
             }
@@ -279,7 +279,7 @@ class Board(val tiles: Map[String, Tile]) {
             case None => ()
         }
         
-        val (from, to) = (getTileUnsafe(move.from), getTileUnsafe(move.to))
+        val (from, to) = (move.from, move.to)
         makeMove(move)
         updateKingPos(from, to)
         updateEnPassantOption(from, to)
