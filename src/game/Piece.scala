@@ -15,9 +15,9 @@ object Movement {
 
 abstract class Piece() {
     val shade: Shade
+    val hasMoved: Boolean
     val baseName: String
     def movePattern: Seq[Movement]
-    var hasMoved: Boolean = false
 
     def name: String = shade match {
         case Dark => baseName.toLowerCase()
@@ -29,46 +29,65 @@ abstract class Piece() {
         case None => false
         case _ => false
     }
+
+    def move(): Piece
 }
-case class King(shade: Shade) extends Piece {
+case class King(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "k"
     def movePattern: Seq[Movement] = Seq(
-        Movement(_.king, shade, 1)
+        Movement(_.row, 1),
+        Movement(_.col, 1),
+        Movement(_.diagonal, 1)
     )
+
+    def move(): King = this.copy(hasMoved = true)
 }
-case class Queen(shade: Shade) extends Piece {
+case class Queen(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "q"
     def movePattern: Seq[Movement] = Seq(
         Movement(_.row),
         Movement(_.col),
         Movement(_.diagonal),
     )
+
+    def move(): Queen = this.copy(hasMoved = true)
 }
-case class Rook(shade: Shade) extends Piece {
+case class Rook(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "r"
     def movePattern: Seq[Movement] = Seq(
         Movement(_.row),
         Movement(_.col)
     )
+
+    def move(): Rook = this.copy(hasMoved = true)
 }
-case class Knight(shade: Shade) extends Piece {
+case class Knight(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "n"
     def movePattern: Seq[Movement] = Seq(
         Movement(_.pony),
     )
+
+        def move(): Knight = this.copy(hasMoved = true)
+
 }
-case class Bishop(shade: Shade) extends Piece {
+case class Bishop(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "b"
     def movePattern: Seq[Movement] = Seq(
         Movement(_.diagonal)
     )
+
+    def move(): Bishop = this.copy(hasMoved = true)
+
 }
-case class Pawn(shade: Shade) extends Piece {
+case class Pawn(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "p"
     def movePattern: Seq[Movement] = {
         def dist = if hasMoved then 1 else 2
         Seq(Movement(_.pawn, shade, dist))
     }
+
+    def move(): Pawn = this.copy(hasMoved = true)
+
 }
 
 object Piece {

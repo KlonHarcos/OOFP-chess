@@ -34,7 +34,7 @@ case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece
             val forward = getTilesinDir(dir1, board, range).filter(t => !t.piece.isDefined)
             val captures = (getTilesinDir(dir2, board, 1) ++ 
                             getTilesinDir(dir3, board, 1)
-                            ).filter(t => t.piece.isDefined || board.enPassantMove.contains(t))
+                            ).filter(t => t.piece.isDefined)
             forward ++ captures
         }
         shade match {
@@ -46,13 +46,6 @@ case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece
             }
         }
     }
-
-    def king(shade: Shade, range: Int = 1)(board: Board): Seq[Tile] = {
-        val allMoves = col(1)(board) ++ row(1)(board) ++ diagonal(1)(board)
-        allMoves.filterNot(t => board.isUnderAttack(shade, t))
-    }
-
-    
 
     def col(range: Int = -1)(board: Board): Seq[Tile] = {
         val upRes = getTilesinDir(North, board, range)

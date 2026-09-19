@@ -4,7 +4,6 @@ import scala.compiletime.ops.boolean
 import dotty.tools.dotc.core.StdNames.str
 
 case class GameRecord(  board: Board,
-                        castlingRights: String,
                         enPassantSquare: Option[Tile],
                         halfMoveClock: Int,
                         fullMoveClock: Int
@@ -38,7 +37,20 @@ object GameRecord {
             case "b" => Dark
         }
         val castlingRights = splitFen(2)
+        board.castlingRights = board.castlingRights.setAll(false)
+        castlingRights.foreach(c =>
+            val (shade, side) =  c match {
+                case 'k' | 'K' => val s = if c.isUpper then Light else Dark; (s, KingSide)
+                case 'q' | 'Q' => val s = if c.isUpper then Light else Dark; (s, QueenSide)
+            }
+            board.castlingRights = board.castlingRights.set(shade, side, true)
+        )
         val enPassantSquare = splitFen(3)
+        board.enPassantMove = if enPassantSquare == "-" then None else 
+            val takeTile = board.getTileUnsafe(enPassantSquare)
+            val removeTileRank = if takeTile.rank == 6 then 5 else 4
+            Some(enPassant(takeTile, board.getTileUnsafe(takeTile.file.toString + removeTileRank.toString)))
+        println(board.enPassantMove)
         val halfMoveClock = splitFen(4)
         val fullMoveClock = splitFen(5)
 
@@ -57,7 +69,7 @@ object GameRecord {
             }
         }
 
-        GameRecord(board, castlingRights, board.getTile(enPassantSquare), halfMoveClock.toInt, fullMoveClock.toInt)
+        GameRecord(board, board.getTile(enPassantSquare), halfMoveClock.toInt, fullMoveClock.toInt)
     }
 
     

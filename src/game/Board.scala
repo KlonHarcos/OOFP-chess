@@ -10,9 +10,11 @@ sealed trait CastlingSide
 case object KingSide extends CastlingSide
 case object QueenSide extends CastlingSide
 
-case class Move(from: Tile, val to: Tile, isCastles: Option[Move] = None, isEnPassant: Option[Tile] = None) {
+type TileName = String
+
+case class Move(from: TileName, to: TileName, isCastles: Option[Move] = None, isEnPassant: Option[TileName] = None) {
     def ==(f: Tile, t: Tile): Boolean = {
-        this.from == f && this.to == t 
+        this.from == f.name && this.to == t.name
     }
 }
 
@@ -32,16 +34,18 @@ case class CastlingRights(
             case (Light, QueenSide) => Seq("e1", "c1", "a1", "d1")
             case input => throw new IllegalArgumentException(s"Unexpected input: $input")
         }).map(board.getTileUnsafe(_))
-        Move(kf, kt, isCastles = Some(Move(rf, rt)))
+        Move(kf.name, kt.name, isCastles = Some(Move(rf.name, rt.name)))
     }
 
-
-    def set(shade: Shade, side: CastlingSide): CastlingRights = {
+    def setAll(value: Boolean): CastlingRights = {
+        this.copy(blackKing = value, whiteKing = value, blackQueen = value, whiteQueen = value)
+    }
+    def set(shade: Shade, side: CastlingSide, value: Boolean = false): CastlingRights = {
         (shade, side) match {
-            case (Dark, KingSide) => this.copy(blackKing = false)
-            case (Dark, QueenSide) => this.copy(blackQueen = false)
-            case (Light, KingSide) => this.copy(whiteKing = false)
-            case (Light, QueenSide) => this.copy(whiteQueen = false)
+            case (Dark, KingSide) => this.copy(blackKing = value)
+            case (Dark, QueenSide) => this.copy(blackQueen = value)
+            case (Light, KingSide) => this.copy(whiteKing = value)
+            case (Light, QueenSide) => this.copy(whiteQueen = value)
             case input => throw new IllegalArgumentException(s"Unexpected input: $input")
         }
     }
@@ -75,16 +79,37 @@ case class CastlingRights(
     }
 }
 
+class Board(val tiles: Map[String, Tile]) {
+    def deepCopy(): Board = {
+        val newTiles = Map.from[String, Tile](getTiles().map(t => (t.name -> t.copy())))
+        val newBoard = new Board(newTiles)
+        newBoard.hasTurn = hasTurn
+        newBoard.enPassantMove = enPassantMove
+        newBoard.castlingRights = castlingRights
+        newBoard.visionDark = visionDark
+        newBoard.visionLight = visionLight
+        newBoard.blackKingTile = blackKingTile
+        newBoard.whiteKingTile = whiteKingTile
+        newBoard
+    }
 
-class Board(val boardSize: Int, screenDims: Int) {
 
     var hasTurn: Shade = Light
     def changeTurn() = hasTurn = hasTurn.other
     var enPassantMove: Option[enPassant] = None
     var castlingRights = CastlingRights()
-    var inCheck: Option[Shade] = None //FIX ME: implement me
     var visionDark = Seq.empty[Tile]
     var visionLight = Seq.empty[Tile]
+    var blackKingTile: String = "e8"
+    var whiteKingTile: String = "e1"
+
+
+    def gameState(): String = {
+        val noLegalMoves = getAllLegalMoves(hasTurn).isEmpty
+        if noLegalMoves && isInCheck(hasTurn) then "Winner:" + hasTurn.other
+        else if noLegalMoves then "Draw"
+        else "running" 
+    }
 
     def getVision(shade: Shade): Seq[Tile] = shade match {
         case Dark => visionDark
@@ -97,14 +122,14 @@ class Board(val boardSize: Int, screenDims: Int) {
 
         for (t <- getTiles()) {
             t.piece match {
-                case Some(p) if p.shade == Dark => visionDark = visionDark ++ getPossibleTargetTile(t)
-                case Some(p) if p.shade == Light => visionLight = visionLight ++ getPossibleTargetTile(t) 
+                case Some(p) if p.shade == Dark => visionDark = visionDark ++ getTilesInVision(t)
+                case Some(p) if p.shade == Light => visionLight = visionLight ++ getTilesInVision(t) 
                 case _ => ()
             }
         }
 
-        println("dark vision: " + visionDark)
-        println("light vision " + visionLight)
+        //println("dark vision: " + visionDark)
+        //println("light vision " + visionLight)
     }
 
     def hasStartingPiece(str: String): Boolean = { //TODO: decide to keep or discard currently unused
@@ -119,9 +144,9 @@ class Board(val boardSize: Int, screenDims: Int) {
         case None => None
         case Some(e) => Some(e.pawnTarget)
 
-    def isUnderAttack(shadeUnderAttack: Shade, tile: Tile): Boolean = getVision(shadeUnderAttack.other).contains(tile)
-
-    def isInCheck(shade: Shade): Boolean = inCheck.contains(shade)
+    def isUnderAttack(shadeUnderAttack: Shade, tile: Tile): Boolean = {
+        getVision(shadeUnderAttack.other).contains(tile)
+    }
 
     def getCastleMove(shade: Shade, side: CastlingSide): Option[Move] = {
 
@@ -152,23 +177,64 @@ class Board(val boardSize: Int, screenDims: Int) {
         Seq(getCastleMove(shade, KingSide), getCastleMove(shade, QueenSide)).flatMap(identity)
     }
 
-    def getPossibleTargetTile(tile: Tile): Seq[Tile] = getValidMoves(tile).map(m => m.to)
+    def getPossibleTargetTile(tile: Tile): Seq[Tile] = getLegalMoves(tile).map(m => getTileUnsafe(m.to))
+    def getTilesInVision(tile: Tile) = getPseudoLegalMoves(tile).map(m => getTileUnsafe(m.to))
 
-    def getValidMoves(tile: Tile): Seq[Move] = {
+    def getPseudoLegalMoves(tile: Tile): Seq[Move] = {
         val currPiece = tile.piece
-        
         val possible = tile.piece match {
             case None => Seq.empty[Tile]
-            case Some(p) => p.movePattern.flatMap(f  => f(tile)(this))
+            case Some(p) => {
+                p.movePattern.flatMap(f  => f(tile)(this))}
         }
-        val noSelfCapture = possible.filterNot(t => Piece.hasSameColor(t.piece, currPiece))
-        
-        val castles = currPiece match {
-            case Some(King(s)) => getValidCastles(s)
-            case _ => Seq.empty[Move]                    
-        }
+        possible.filterNot(t => Piece.hasSameColor(t.piece, currPiece))
+                    .map{to => Move(tile.name, to.name)}
+    }
 
-        noSelfCapture.map{to => Move(tile, to)} ++ castles
+    def getLegalMoves(tile: Tile): Seq[Move] = {
+        val currPiece = tile.piece
+        val pseudoLegal = getPseudoLegalMoves(tile)            
+
+        val legal = pseudoLegal.filterNot(isDangerous(_))
+        
+        currPiece match {
+            case Some(King(s, _)) => legal ++ getValidCastles(s)
+            case Some(Pawn(s, _)) => legal ++  
+            case _ => legal                 
+        }
+    }
+
+    def getLegalEnPassant(tile: Tile): Seq[Move] = {
+        enPassantMove match {
+            case None => Seq.empty[Move]
+            case Some(enPass) => {
+                val diff = (enPass.pawnToRemove.file - tile.file)
+                if (diff == 1 || diff == -1) && tile.rank == enPass.pawnToRemove.rank then Seq(Move(tile, enPass.pawnTarget, isEnPassant = Some(enPass.pawnToRemove)))
+            }
+        }
+    }
+
+    def getAllLegalMoves(shade: Shade): Seq[Move] = {
+        val playerTiles = getTiles().filter(t => t.piece.exists(_.shade == shade))
+        playerTiles.flatMap(getLegalMoves(_))
+    }
+
+    def isDangerous(move: Move): Boolean = {
+        val tempBoard = this.deepCopy()
+        val currTurn = tempBoard.hasTurn
+        tempBoard.movePiece(move)
+        tempBoard.isInCheck(currTurn)
+    }
+
+    def isInCheck(shade: Shade): Boolean = {
+        def getKing(shade: Shade): Tile = {
+            shade match {
+                case Dark => getTileUnsafe(blackKingTile)
+                case Light => getTileUnsafe(whiteKingTile)
+            }
+        }
+        val kingTile = getKing(shade)
+        isUnderAttack(shade, kingTile)
     }
 
     def placePiece(tile: Tile, p: Option[Piece]) = {
@@ -184,20 +250,24 @@ class Board(val boardSize: Int, screenDims: Int) {
             case Some(p) if p.shade != hasTurn => return false
             case _ => ()
         }
-        val move: Option[Move] = getValidMoves(f).find(m => m == (f, t))
+        val move: Option[Move] = getLegalMoves(f).find(m => m == (f, t))
         move match {
             case None => false
             case Some(m) => movePiece(m); true
         }
     }
 
+    
+
     def movePiece(move: Move): Unit = {
         def makeMove(m: Move): Unit = {
-            println("making move")
-            placePiece(m.to, m.from.piece)
+            val piece: Option[Piece] = getTileUnsafe(m.from).piece match {
+                case Some(p) => Some(p.move())
+                case _ => None
+            }
+            
+            placePiece(m.to, piece)
             placePiece(m.from, None)
-            m.to.piece.foreach(_.hasMoved = true)
-            m.to.piece.foreach(p => println("i exist"))
         }
 
         move.isCastles match {
@@ -209,19 +279,26 @@ class Board(val boardSize: Int, screenDims: Int) {
             case None => ()
         }
         
+        val (from, to) = (getTileUnsafe(move.from), getTileUnsafe(move.to))
         makeMove(move)
-        
-        handleEnPassantOption(move.from, move.to)
-        handleCastlingRights(move.from, move.to)
+        updateKingPos(from, to)
+        updateEnPassantOption(from, to)
+        updateCastlingRights(from, to)
         updateVision()
-        
-        
         changeTurn()
     }
 
-    def handleEnPassantOption(from: Tile, to: Tile): Unit = {
+    def updateKingPos(from: Tile, to: Tile): Unit = {
+        from.name match {
+            case str if str == blackKingTile => blackKingTile = to.name
+            case str if str == whiteKingTile => this.whiteKingTile = to.name
+            case _ => ()
+        }
+    }
+
+    def updateEnPassantOption(from: Tile, to: Tile): Unit = {
         val (pawnMoved2Tiles, shade) = from.piece match {
-            case Some(p @ Pawn(s)) if !p.hasMoved && (from.rank - to.rank) % 2 == 0  => (true, s)
+            case Some(p @ Pawn(s, _)) if !p.hasMoved && (from.rank - to.rank) % 2 == 0  => (true, s)
             case _ => (false, None)
         }
         if !pawnMoved2Tiles then enPassantMove = None; return
@@ -233,7 +310,7 @@ class Board(val boardSize: Int, screenDims: Int) {
         enPassantMove = Some(enPassant(captureTile, to))
     }
 
-    def handleCastlingRights(from: Tile, to: Tile): Unit = Seq(from.name, to.name).foreach{ n => 
+    def updateCastlingRights(from: Tile, to: Tile): Unit = Seq(from.name, to.name).foreach{ n => 
         castlingRights = n match {
             case "e1" => castlingRights.set(Light, KingSide).set(Light, QueenSide)
             case "a1" => castlingRights.set(Light, QueenSide)
@@ -245,16 +322,6 @@ class Board(val boardSize: Int, screenDims: Int) {
         }
     }
     
-    def tileSize = screenDims.toFloat / boardSize
-
-    val tiles: Map[String, Tile] = {
-        val pairs = for {
-            l <- 'a' until ('a' + boardSize).toChar
-            n <- 1 to boardSize
-            str = l.toString + n.toString
-        } yield (str, makeTile(str))
-        Map.from(pairs)
-    }
 
     def getTileRect(str: String): Option[Rectangle] = {
         Some(tiles(str).rect)
@@ -270,34 +337,7 @@ class Board(val boardSize: Int, screenDims: Int) {
     }
 
     def getTile(mousePostion: Position): Option[Tile] = tiles.values.find(_.isInside(mousePostion))
-
-
-    def makeTile(notation: String): Tile = {
-        val r = makeTileRect(notation)
-        val s = getShade(notation)
-        Tile(s, r, notation)
-    }
-
-    def makeTileRect(notation: String): Rectangle = {
-        val (l, n) = notationStot(notation)
-        val x = ((l - 'a') * tileSize)
-        val y = (boardSize - (n)) * tileSize
-        val pos = Position(x, y)
-        val color = getShade(notation) match {
-            case Dark => Black
-            case Light => White
-        }
-        Rectangle(pos, color, tileSize)
-    }
-
-    def notationStot(notation: String): (Char, Int) =
-        (notation(0), notation(1).asDigit)
-
-    def getShade(notation: String): Shade = {
-        val (l, n) = notationStot(notation)
-        if (l.toInt + n) % 2 == 0 then Dark else Light
-    }
-
+    
     def getRanks(): Seq[Seq[Tile]] = {
         Seq.from(tiles.values).groupBy(_.name(1)).values.toSeq.map(s => s.sortBy(_.name))
     }
@@ -327,4 +367,51 @@ class Board(val boardSize: Int, screenDims: Int) {
         strBuilder = strBuilder.dropRight(1)
         strBuilder
     }
+
+}
+
+
+object Board {
+    def apply(boardSize: Int, screenDims: Int): Board = {
+        def makeTile(notation: String): Tile = {
+            val r = makeTileRect(notation)
+            val s = getShade(notation)
+            Tile(s, r, notation)
+        }
+        def makeTileRect(notation: String): Rectangle = {
+            val (l, n) = notationStot(notation)
+            val x = ((l - 'a') * tileSize)
+            val y = (boardSize - (n)) * tileSize
+            val pos = Position(x, y)
+            val color = getShade(notation) match {
+                case Dark => Black
+                case Light => White
+            }
+            Rectangle(pos, color, tileSize)
+        }
+        def tileSize = screenDims.toFloat / boardSize
+        val tiles: Map[String, Tile] = {
+            val pairs = for {
+                l <- 'a' until ('a' + boardSize).toChar
+                n <- 1 to boardSize
+                str = l.toString + n.toString
+            } yield (str, makeTile(str))
+            Map.from(pairs)
+        }
+        new Board(tiles)
+    }
+
+    
+
+    
+
+    def getShade(notation: String): Shade = {
+        val (l, n) = notationStot(notation)
+        if (l.toInt + n) % 2 == 0 then Dark else Light
+    }
+
+    def notationStot(notation: String): (Char, Int) =
+        (notation(0), notation(1).asDigit)
+
+    
 }
