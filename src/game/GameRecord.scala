@@ -64,6 +64,14 @@ object GameRecord {
                     val p: Piece = Piece.getPiecebyName(c)
                     val strTileName = colLetter.toString + rowNum
                     board.placePiece(strTileName, Some(p))
+                    if (p.isInstanceOf[Pawn]) {
+                        val startingRank = p.shade match {
+                            case Dark => 7
+                            case Light => 2
+                        }
+                        if (rowNum != startingRank) board.placePiece(strTileName, Some(p.move()))
+                    }
+                    
                     colNum += 1
                 }
             }

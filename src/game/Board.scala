@@ -175,6 +175,10 @@ class Board(val tiles: Map[String, Tile]) {
         tiles(tile) = tiles(tile).copy(piece = p)
     }
 
+    def tryMove(move: Move): Boolean = {
+        tryMove(move.from, move.to)
+    }
+
     def tryMove(f: Tile, t: Tile): Boolean = {
         f.piece match {
             case Some(p) if p.shade != hasTurn => return false
@@ -192,10 +196,12 @@ class Board(val tiles: Map[String, Tile]) {
     def movePiece(move: Move): Unit = {
         def makeMove(m: Move): Unit = {
             val piece: Option[Piece] = m.from.piece match {
+                case Some(Pawn(s, _)) if m.to.rank == 1 || m.to.rank == 8 => Some(Queen(s, true)) // for Promotion
+                case Some(p @ Pawn(s, _)) => Some(p.move())
                 case Some(p) => Some(p.move())
                 case _ => None
             }
-            
+            updateEnPassantOption(m)
             placePiece(m.to, piece)
             placePiece(m.from, None)
         }
@@ -212,7 +218,6 @@ class Board(val tiles: Map[String, Tile]) {
         val (from, to) = (move.from, move.to)
         makeMove(move)
         updateKingPos(from, to)
-        updateEnPassantOption(from, to)
         updateCastlingRights(from, to)
         updateVision()
         changeTurn()
@@ -226,18 +231,19 @@ class Board(val tiles: Map[String, Tile]) {
         }
     }
 
-    def updateEnPassantOption(from: Tile, to: Tile): Unit = {
-        val (pawnMoved2Tiles, shade) = from.piece match {
-            case Some(p @ Pawn(s, _)) if !p.hasMoved && (from.rank - to.rank) % 2 == 0  => (true, s)
-            case _ => (false, None)
+    def updateEnPassantOption(move: Move): Unit = {
+        val pawnMoved2Tiles = move.from.piece match {
+            case Some(p @ Pawn(s, _)) if Math.abs(move.from.rank - move.to.rank) == 2  => true
+            case _ => false
         }
-        if !pawnMoved2Tiles then enPassantMove = None; return
-        
+        if (!pawnMoved2Tiles) {
+            enPassantMove = None
+            return
+        }
         //some magic math to figure out the tile between the jump (from + to) / 2 gives rank 3 and 6 respectively
-        val captureName = from.file.toString + ((from.rank + to.rank) / 2).toString
+        val captureName = move.from.file.toString + ((move.from.rank + move.to.rank) / 2).toString
         val captureTile = getTileUnsafe(captureName)
-
-        enPassantMove = Some(enPassant(captureTile, to))
+        enPassantMove = Some(enPassant(captureTile, move.to))
     }
 
     def updateCastlingRights(from: Tile, to: Tile): Unit = Seq(from.name, to.name).foreach{ n => 
@@ -252,7 +258,6 @@ class Board(val tiles: Map[String, Tile]) {
         }
     }
     
-
     def getTileRect(str: String): Option[Rectangle] = {
         Some(tiles(str).rect)
     }

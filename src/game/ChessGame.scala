@@ -16,7 +16,7 @@ class ChessGame extends ChessBase {
     val chessLogic = new ChessLogic(board, record)
     val record = GameRecord(fenEx, board)
     val player1: Player = new Player(Light)
-    val player2: Player = new Player(Dark)
+    val player2: RandomRobot = new RandomRobot(Dark)
 
     var highlightedTile: Option[Tile] = None
     var validMoveHighlights: Seq[Tile] = Seq.empty[Tile]
@@ -26,6 +26,7 @@ class ChessGame extends ChessBase {
         drawBoard()
         drawHighlightedTile()
         drawValidMoves()
+        if player2.shade == board.hasTurn then board.tryMove(player2.getMove(board))
     }
 
     def drawBoard() = {
