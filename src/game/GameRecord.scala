@@ -50,7 +50,6 @@ object GameRecord {
             val takeTile = board.getTileUnsafe(enPassantSquare)
             val removeTileRank = if takeTile.rank == 6 then 5 else 4
             Some(enPassant(takeTile, board.getTileUnsafe(takeTile.file.toString + removeTileRank.toString)))
-        println(board.enPassantMove)
         val halfMoveClock = splitFen(4)
         val fullMoveClock = splitFen(5)
 

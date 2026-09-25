@@ -17,6 +17,7 @@ abstract class Piece() {
     val shade: Shade
     val hasMoved: Boolean
     val baseName: String
+    val value: Int
     def movePattern: Seq[Movement]
 
     def name: String = shade match {
@@ -34,6 +35,7 @@ abstract class Piece() {
 }
 case class King(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "k"
+    val value = 100
     def movePattern: Seq[Movement] = Seq(
         Movement(_.row, 1),
         Movement(_.col, 1),
@@ -44,6 +46,7 @@ case class King(shade: Shade, hasMoved: Boolean = false) extends Piece {
 }
 case class Queen(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "q"
+    val value = 9
     def movePattern: Seq[Movement] = Seq(
         Movement(_.row),
         Movement(_.col),
@@ -54,6 +57,7 @@ case class Queen(shade: Shade, hasMoved: Boolean = false) extends Piece {
 }
 case class Rook(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "r"
+    val value = 5
     def movePattern: Seq[Movement] = Seq(
         Movement(_.row),
         Movement(_.col)
@@ -63,6 +67,7 @@ case class Rook(shade: Shade, hasMoved: Boolean = false) extends Piece {
 }
 case class Knight(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "n"
+    val value = 3
     def movePattern: Seq[Movement] = Seq(
         Movement(_.pony),
     )
@@ -72,6 +77,7 @@ case class Knight(shade: Shade, hasMoved: Boolean = false) extends Piece {
 }
 case class Bishop(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "b"
+    val value = 3
     def movePattern: Seq[Movement] = Seq(
         Movement(_.diagonal)
     )
@@ -81,6 +87,7 @@ case class Bishop(shade: Shade, hasMoved: Boolean = false) extends Piece {
 }
 case class Pawn(shade: Shade, hasMoved: Boolean = false) extends Piece {
     val baseName = "p"
+    val value = 1
     def movePattern: Seq[Movement] = {
         def dist = if hasMoved then 1 else 2
         Seq(Movement(_.pawn, shade, dist))

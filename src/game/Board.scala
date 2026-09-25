@@ -10,6 +10,10 @@ case class Move(from: Tile, to: Tile, isCastles: Option[Move] = None, isEnPassan
     def ==(f: Tile, t: Tile): Boolean = {
         this.from == f && this.to == t
     }
+
+    override def toString(): String = {
+        from.name + to.name
+    }
 }
 
 case class enPassant(pawnTarget: Tile, pawnToRemove: Tile)

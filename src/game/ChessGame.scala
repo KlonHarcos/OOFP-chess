@@ -14,9 +14,9 @@ def fenEx = "rnbqkbnr/pp2pppp/3p4/2pP4/8/8/PPP1PPPP/RNBQKBNR w KQkq c6 0 3"
 class ChessGame extends ChessBase {
     val board = Board(boardSize, appSize)
     val chessLogic = new ChessLogic(board, record)
-    val record = GameRecord(fenEx, board)
-    val player1: Player = new Player(Light)
-    val player2: RandomRobot = new RandomRobot(Dark)
+    val record = GameRecord(FenStart, board)
+    //val player1: Player = new Player(Light)
+    val player2: Player = new DumbRobotNoPruning(Dark, 3)
 
     var highlightedTile: Option[Tile] = None
     var validMoveHighlights: Seq[Tile] = Seq.empty[Tile]
