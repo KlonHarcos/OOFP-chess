@@ -44,6 +44,15 @@ class Board(val tiles: Map[String, Tile]) {
     var whiteKingTile: String = "e1"
 
 
+    //val preComputedDirs: scala.collection.immutable.Map[(Tile, Direction), Seq[Tile]] = {
+    //    board.getTile(neighborName(dir)) match {
+    //        case Some(t) if t.piece.isDefined => Seq[Tile](t)
+    //        case Some(t) => t.getTilesRec(dir, board, range)
+    //        case None => Seq.empty[Tile]
+    //    }
+    //}
+
+
     def gameState(): String = {
         val noLegalMoves = getAllLegalMoves(hasTurn).isEmpty
         if noLegalMoves && isInCheck(hasTurn) then "Winner:" + hasTurn.other
@@ -286,7 +295,7 @@ class Board(val tiles: Map[String, Tile]) {
     //def getPieces(shade: Shade): Seq[Piece] = getTiles().flatMap(t => t.piece).filter(_.shade == shade)
     //def getPieces(piece: Piece): Seq[Piece] = getPieces(piece.shade).filter(_ == piece)
 
-    override def toString(): String = {var strBuilder = ""
+     def boardAsString(): String = {var strBuilder = ""
         val rankList = getRanks().sortBy(s => s(0).name).reverse
         for (rank <- rankList) {
             var emptyCounter = 0
@@ -305,6 +314,19 @@ class Board(val tiles: Map[String, Tile]) {
         }
         strBuilder = strBuilder.dropRight(1)
         strBuilder
+    }
+
+    override def toString(): String = {
+        val enPass: String = enPassantMove match {
+            case None => "-"
+            case Some(value) => value.pawnTarget.name
+        }
+        val nextToMove = hasTurn match {
+            case Light => "w"
+            case Dark => "b"
+        }
+
+        Seq[String](boardAsString(), nextToMove, castlingRights.toString, enPass, "0", "1").mkString(" ")
     }
 
 }

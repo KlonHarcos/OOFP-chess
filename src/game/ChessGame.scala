@@ -9,14 +9,13 @@ import game.{Shade, Light, Dark}
 import scala.collection.mutable.Map
 
 def FenStart = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-def fenEx = "rnbqkbnr/pp2pppp/3p4/2pP4/8/8/PPP1PPPP/RNBQKBNR w KQkq c6 0 3"
+def fenEx = "8/6p1/pn2kp1p/1p5P/1B3PP1/1P6/P4K2/8 w - - 2 36"
 
 class ChessGame extends ChessBase {
     val board = Board(boardSize, appSize)
-    val chessLogic = new ChessLogic(board, record)
-    val record = GameRecord(FenStart, board)
+    FenParser.loadBoard(fenEx, board)
     //val player1: Player = new Player(Light)
-    val player2: Player = new DumbRobotNoPruning(Dark, 3)
+    val player2: Player = new SmarterRobotNoPruning(Dark, 3)
 
     var highlightedTile: Option[Tile] = None
     var validMoveHighlights: Seq[Tile] = Seq.empty[Tile]

@@ -1,34 +1,6 @@
 package game
-
-import scala.compiletime.ops.boolean
-import dotty.tools.dotc.core.StdNames.str
-
-case class GameRecord(  board: Board,
-                        enPassantSquare: Option[Tile],
-                        halfMoveClock: Int,
-                        fullMoveClock: Int
-) {
-
-    var moves: List[String] = List[String]()
-
-    override def toString(): String = {
-        val enPass: String = enPassantSquare match {
-            case None => "-"
-            case Some(value) => value.name
-        }
-        val nextToMove = board.hasTurn match {
-            case Light => "w"
-            case Dark => "b"
-        }
-
-        Seq[String](board.toString, nextToMove, board.castlingRights.toString, enPass, halfMoveClock.toString, fullMoveClock.toString).mkString(" ")
-    }
-     
-}
-
-
-object GameRecord {
-    def apply(fen: String, board: Board): GameRecord = {
+object FenParser {
+    def loadBoard(fen: String, board: Board): Unit = {
         val splitFen = fen.split(" ")
         val boardRows = splitFen(0).split("/")
         val nextToMove = splitFen(1)
@@ -39,11 +11,13 @@ object GameRecord {
         val castlingRights = splitFen(2)
         board.castlingRights = board.castlingRights.setAll(false)
         castlingRights.foreach(c =>
-            val (shade, side) =  c match {
-                case 'k' | 'K' => val s = if c.isUpper then Light else Dark; (s, KingSide)
-                case 'q' | 'Q' => val s = if c.isUpper then Light else Dark; (s, QueenSide)
-            }
-            board.castlingRights = board.castlingRights.set(shade, side, true)
+            if (c == '-') () 
+            else {
+                val (shade, side) =  c match {
+                    case 'k' | 'K' => val s = if c.isUpper then Light else Dark; (s, KingSide)
+                    case 'q' | 'Q' => val s = if c.isUpper then Light else Dark; (s, QueenSide) 
+                }
+                board.castlingRights = board.castlingRights.set(shade, side, true)}
         )
         val enPassantSquare = splitFen(3)
         board.enPassantMove = if enPassantSquare == "-" then None else 
@@ -76,8 +50,11 @@ object GameRecord {
             }
         }
 
-        GameRecord(board, board.getTile(enPassantSquare), halfMoveClock.toInt, fullMoveClock.toInt)
+        board.getTiles().foreach{t =>
+            t.piece match
+                case Some(King(Dark, _)) => board.blackKingTile = t.name
+                case Some(King(Light, _)) => board.whiteKingTile = t.name
+                case _ => ()
+        }
     }
-
-    
 }
