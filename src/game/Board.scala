@@ -44,15 +44,6 @@ class Board(val tiles: Map[String, Tile]) {
     var whiteKingTile: String = "e1"
 
 
-    //val preComputedDirs: scala.collection.immutable.Map[(Tile, Direction), Seq[Tile]] = {
-    //    board.getTile(neighborName(dir)) match {
-    //        case Some(t) if t.piece.isDefined => Seq[Tile](t)
-    //        case Some(t) => t.getTilesRec(dir, board, range)
-    //        case None => Seq.empty[Tile]
-    //    }
-    //}
-
-
     def gameState(): String = {
         val noLegalMoves = getAllLegalMoves(hasTurn).isEmpty
         if noLegalMoves && isInCheck(hasTurn) then "Winner:" + hasTurn.other
