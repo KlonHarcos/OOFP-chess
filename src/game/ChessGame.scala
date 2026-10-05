@@ -59,7 +59,7 @@ class ChessGame extends ChessBase {
                 if p.shade == board.hasTurn then 
                     validMoveHighlights = board.getPossibleTargetTile(t)))
         debugHighlights = Seq.empty[Tile]
-        debugHighlights = board.getVision(Light)
+        //debugHighlights = board.getVision(Light)
     }
 
 

@@ -10,16 +10,16 @@ case class CastlingRights(
     blackKing: Boolean = true,
     blackQueen: Boolean = true
 ) {
-    def getMove(shade: Shade, side: CastlingSide, board: Board): Move = {
-        val Seq(kf, kt, rf, rt) = ((shade, side) match {
-            case (Dark, KingSide) =>  Seq("e8", "g8", "h8", "f8")
-            case (Dark, QueenSide) => Seq("e8", "c8", "a8", "d8")
-            case (Light, KingSide) => Seq("e1", "g1", "h1", "f1")
-            case (Light, QueenSide) => Seq("e1", "c1", "a1", "d1")
-            case input => throw new IllegalArgumentException(s"Unexpected input: $input")
-        }).map(board.getTileUnsafe(_))
-        Move(kf, kt, isCastles = Some(Move(rf, rt)))
-    }
+    //def getMove(shade: Shade, side: CastlingSide, board: Board): Move = {
+    //    val Seq(kf, kt, rf, rt) = ((shade, side) match {
+    //        case (Dark, KingSide) =>  Seq("e8", "g8", "h8", "f8")
+    //        case (Dark, QueenSide) => Seq("e8", "c8", "a8", "d8")
+    //        case (Light, KingSide) => Seq("e1", "g1", "h1", "f1")
+    //        case (Light, QueenSide) => Seq("e1", "c1", "a1", "d1")
+    //        case input => throw new IllegalArgumentException(s"Unexpected input: $input")
+    //    }).map(board.getTileUnsafe(_))
+    //    Move(kf, kt, isCastles = Some(Move(rf, rt)))
+    //}
 
     def setAll(value: Boolean): CastlingRights = {
         this.copy(blackKing = value, whiteKing = value, blackQueen = value, whiteQueen = value)
@@ -60,5 +60,11 @@ case class CastlingRights(
             right = right.set(shade, side)
         }
         right
+    }
+}
+
+object CastlingRights {
+    def apply(fenStr: String): CastlingRights = {
+        CastlingRights(fenStr.contains('K'), fenStr.contains('Q'), fenStr.contains('k'), fenStr.contains('q'))
     }
 }
