@@ -8,14 +8,14 @@ import engine.graphics.{HighlightGreen, LowHighlightGreen}
 import game.{Shade, Light, Dark}
 import scala.collection.mutable.Map
 
-def FenStart = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-def fenEx = "8/6p1/pn2kp1p/1p5P/1B3PP1/1P6/P4K2/8 w - - 2 36"
+//def FenStart = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+//def fenEx = "8/6p1/pn2kp1p/1p5P/1B3PP1/1P6/P4K2/8 w - - 2 36"
 
 class ChessGame extends ChessBase {
     val board = Board(boardSize, appSize)
-    FenParser.loadBoard(fenEx, board)
-    //val player1: Player = new Player(Light)
-    val player2: Player = new SmarterRobotNoPruning(Dark, 3)
+    //FenParser.loadBoard(fenEx, board)
+    ////val player1: Player = new Player(Light)
+    //val player2: Player = new SmarterRobotNoPruning(Dark, 3)
 
     var highlightedTile: Option[Tile] = None
     var validMoveHighlights: Seq[Tile] = Seq.empty[Tile]
@@ -25,7 +25,7 @@ class ChessGame extends ChessBase {
         drawBoard()
         drawHighlightedTile()
         drawValidMoves()
-        if player2.shade == board.hasTurn then board.tryMove(player2.getMove(board))
+        //if player2.shade == board.hasTurn then board.tryMove(player2.getMove(board))
     }
 
     def drawBoard() = {
@@ -43,22 +43,23 @@ class ChessGame extends ChessBase {
     def drawHighlightedTile() = highlightedTile.foreach( r => drawRectangle(r.rect.copy(color = HighlightGreen)))
     def drawValidMoves() = validMoveHighlights.foreach(r => drawRectangle(r.rect.copy(color = LowHighlightGreen)))
     def drawDebug() = debugHighlights.foreach(r => drawRectangle(r.rect.copy(color = LowHighlightGreen)))
-
+    def clearHighlights(): Unit = {
+        highlightedTile = None
+        validMoveHighlights = Seq.empty[Tile]
+    }
     override def mousePressed(): Unit = {
         val mouse = Position(mouseX.toFloat, mouseY.toFloat)
-        val currHighlight: Option[Tile] = highlightedTile
-        highlightedTile = board.getTile(mouse)
-        (currHighlight, highlightedTile) match {
-            case (Some(from), Some(to)) if from == to => highlightedTile = None
-            case (Some(from), Some(to)) => val res = board.tryMove(from, to); if res then highlightedTile = None; val state = board.gameState(); if state != "running" then println(state)
+        val currHighlight: Option[Tile] = highlightedTile 
+        (currHighlight, board.getTile(mouse)) match {
+            case (Some(from), Some(to)) if from == to => clearHighlights()
+            case (Some(from), Some(to)) => clearHighlights(); board.movePiece(from, to); board.refreshVisuals()
+            case (_, Some(to)) => 
+                highlightedTile = Some(to)
+                validMoveHighlights = board.getMoves(to.piece)
+            //case (Some(from), Some(to)) => highlightedTile = Some(to) //val res = board.tryMove(from, to); if res then highlightedTile = None; val state = board.gameState(); if state != "running" then println(state)
             case _ => ()
         }
-        validMoveHighlights = Seq.empty[Tile] 
-        highlightedTile.foreach(t => 
-            t.piece.foreach(p => 
-                if p.shade == board.hasTurn then 
-                    validMoveHighlights = board.getPossibleTargetTile(t)))
-        debugHighlights = Seq.empty[Tile]
+        //debugHighlights = Seq.empty[Tile]
         //debugHighlights = board.getVision(Light)
     }
 

@@ -18,7 +18,11 @@ extension (i: Notation) {
     }
 
     private def getAllinDir(dir: Direction): Seq[Notation] = at(dir) match {
-            case Some(next) => i +: next.getAllinDir(dir)
+        case None => Seq.empty[Notation]
+        case Some(n) => n.getAllinDirRec(dir)
+    }
+    private def getAllinDirRec(dir: Direction): Seq[Notation] = at(dir) match {
+            case Some(next) => i +: next.getAllinDirRec(dir)
             case None => Seq(i)
     }
 }

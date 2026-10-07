@@ -56,10 +56,19 @@ case class Pawn(shade: Shade, id: PieceId = -1) extends Piece {
     val baseName = "p"
     val value = 1
     def movePattern(n: Notation): Set[Seq[Notation]] = {
-        Set.empty[Seq[Notation]] //FIXME IMPLEMENT
+        val (forwardDir, sideE, sideW) = moveDirs
+        val allForward = n.getVisInDir(forwardDir)
+        val forward = if n.rank == startingRank then allForward.take(2) else allForward.take(1)
+        val captureTiles = Seq(sideE, sideW).flatMap(d => n.at(d))
+        Set(forward, captureTiles)
     }
 
-    def startingRank = shade match {
+    private val moveDirs = shade match {
+        case Light => (North, NorthEast, NorthWest)
+        case Dark => (South, SouthEast, SouthWest)
+    }
+
+    private val startingRank = shade match {
         case Dark => 7
         case Light => 2
     }
