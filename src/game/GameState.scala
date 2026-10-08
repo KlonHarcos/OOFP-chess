@@ -4,8 +4,8 @@ import scala.collection.mutable.Map as MMap
 
 case class GameState(
     hasTurn: Shade,
-    enPassantMove: Option[Move],
-    CastlingRights: CastlingRights,
+    enPassantMove: Option[Notation],
+    castlingRights: CastlingRights,
     piecePositions: Map[Piece, Notation],
     pieceVision: Map[Piece, Set[Notation]]
 ) {
@@ -13,11 +13,24 @@ case class GameState(
     private lazy val opponentVision: Map[Piece, Notation] = piecePositions.collect {
         case (k, v) if k.shade == hasTurn.other => (k, v)
     }
+    val invertedPieceMap = piecePositions.map(_.swap)
+    lazy val (whiteTargets, blackTargets) = {
+        val parts = pieceVision.partition{ case (p, _) => p.shade == Light}
+        (parts._1.valuesIterator.flatten.toSet, parts._2.valuesIterator.flatten.toSet)
+    }
+    lazy val whiteKing: King = piecePositions.keys.collectFirst {case k: King if k.shade == Light => k}
+        .getOrElse(throw new Exception("White king is not on board"))    
+    
+    lazy val blackKing: King = piecePositions.keys.collectFirst {case k: King if k.shade == Dark => k}
+        .getOrElse(throw new Exception("White king is not on board"))
+
+
 
     def tryMove(from: Notation, to: Notation): GameState = {
         val p = invertedPieceMap.get(from)
+        
         p match {
-            case Some(piece) if getVisionFor(piece).contains(to) && piece.shade == hasTurn =>
+            case Some(piece) if piece.shade == hasTurn && getPseudoLegalMoves(p).contains(to)  =>
                 if isDangerous(from, to) then return this
                 makeMove(piece, to)
             case _ => this
@@ -26,6 +39,7 @@ case class GameState(
 
     private def setVision(): GameState = {
         val occupiedSquares = piecePositions.values.toSet
+        println(piecePositions.keys)
         val pairs = piecePositions.keys.map{ piece => 
             val pos = piecePositions(piece)
             val naiveVision = piece.movePattern(pos)
@@ -43,6 +57,8 @@ case class GameState(
         this.copy(pieceVision = visMap)
     }
 
+
+    //passed in pmap is necessary so that it checks the future GameState Positions
     private def recalculateVision(piece: Piece, pMap: Map[Piece, Notation]): (Piece, Set[Notation]) = {
         val pos: Notation = pMap(piece)
         val occupiedSquares: Set[Notation] = pMap.values.toSet
@@ -68,11 +84,7 @@ case class GameState(
         case Light => blackTargets
     }
 
-    lazy val (whiteTargets, blackTargets) = {
-        val parts = pieceVision.partition{ case (p, _) => p.shade == Light}
-        (parts._1.valuesIterator.flatten.toSet, parts._2.valuesIterator.flatten.toSet)
-    }
-
+    
     private def isTileUnderAttack(tile: Notation): Boolean = tilesUnderAttack(hasTurn).contains(tile)
 
     private def isDangerous(from: Notation, to: Notation): Boolean = {
@@ -84,7 +96,6 @@ case class GameState(
 
         //most expensive calc
         val newState = this.makeMove(piece, to)
-        //if isInCheck(hasTurn) && newState.isInCheck(hasTurn) then return true
         if newState.isInCheck(this.hasTurn) then return true
         else return false
     }
@@ -94,19 +105,12 @@ case class GameState(
         tilesUnderAttack(shade).contains(kingPos)
     } 
 
-    lazy val whiteKing: King = piecePositions.keys.collectFirst {case k: King if k.shade == Light => k}
-        .getOrElse(throw new Exception("White king is not on board"))    
-    
-    lazy val blackKing: King = piecePositions.keys.collectFirst {case k: King if k.shade == Dark => k}
-        .getOrElse(throw new Exception("White king is not on board"))
-
     private def getKingPos(shade: Shade): Notation = shade match {
         case Dark => piecePositions(blackKing)
         case Light => piecePositions(whiteKing)
     }
 
 
-    val invertedPieceMap = piecePositions.map(_.swap)
     def getPseudoLegalMoves(piece: Option[Piece]): Set[Notation] = {
         val vision = getVisionFor(piece)
         piece match {
@@ -114,10 +118,12 @@ case class GameState(
                 val sameFileAsPawn = sqr.file == piecePositions(p).file
                 invertedPieceMap.get(sqr) match {
                     case None if sameFileAsPawn => true
+                    case None if !sameFileAsPawn && isEnPassantSquare(sqr) => true
                     case Some(other) if !sameFileAsPawn && other.shade != p.shade  => true
                     case _ => false
                 }
             )
+            //case Some(k @King(shade, id)) => vision.filter()
             case Some(p) => vision.filter(sqr => invertedPieceMap.get(sqr) match {
                 case Some(other) if other.shade == p.shade => false
                 case _ => true
@@ -127,9 +133,15 @@ case class GameState(
 
     }
 
+    def isEnPassantSquare(target: Notation): Boolean = enPassantMove match {
+        case Some(n) => n == target
+        case None => false 
+    }
+
     def updatedVisions(from: Notation, to: Notation, pMap: Map[Piece, Notation]): Map[Piece, Set[Notation]] = {
         pieceVision.flatMap{case (k,v) =>
             if !pMap.get(k).isDefined then None // filter out removed piece
+            else if k.isInstanceOf[Knight] && piecePositions(k) != from then Some(k, pieceVision(k)) //Knight vision stays regardless if it hasnt moved
             else if v.contains(from) || v.contains(to) then Some(recalculateVision(k, pMap))
             else Some(k,v)
         }
@@ -138,10 +150,12 @@ case class GameState(
     private def makeMove(p: Piece, to: Notation): GameState = {
         if p.shade != hasTurn then throw new Exception("illegal piece is making a move")
         val newPMap = removePieceAt(to).updated(p, to)
+        val from = piecePositions(p)
         this.copy(
             hasTurn = hasTurn.other, 
-            pieceVision = updatedVisions(piecePositions(p), to, newPMap),
-            piecePositions = newPMap
+            pieceVision = updatedVisions(from, to, newPMap),
+            piecePositions = newPMap,
+            castlingRights = castlingRights.updated(from, to)
         )
     }
 
@@ -171,7 +185,7 @@ object GameState {
 
 
         val enPassantStr = splitFen(3)
-        val enPassantMove = Move.enPassantFromString(enPassantStr)
+        val enPassantMove: Option[Notation] = if enPassantStr == "-" then None else Some(splitFen(3))
         
         val halfMoveClock = splitFen(4)
         val fullMoveClock = splitFen(5)

@@ -8,12 +8,9 @@ import engine.graphics.{HighlightGreen, LowHighlightGreen}
 import game.{Shade, Light, Dark}
 import scala.collection.mutable.Map
 
-//def FenStart = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-//def fenEx = "8/6p1/pn2kp1p/1p5P/1B3PP1/1P6/P4K2/8 w - - 2 36"
 
 class ChessGame extends ChessBase {
     val board = Board(boardSize, appSize)
-    //FenParser.loadBoard(fenEx, board)
     ////val player1: Player = new Player(Light)
     //val player2: Player = new SmarterRobotNoPruning(Dark, 3)
 
@@ -56,11 +53,8 @@ class ChessGame extends ChessBase {
             case (_, Some(to)) => 
                 highlightedTile = Some(to)
                 validMoveHighlights = board.getMoves(to.piece)
-            //case (Some(from), Some(to)) => highlightedTile = Some(to) //val res = board.tryMove(from, to); if res then highlightedTile = None; val state = board.gameState(); if state != "running" then println(state)
             case _ => ()
         }
-        //debugHighlights = Seq.empty[Tile]
-        //debugHighlights = board.getVision(Light)
     }
 
 

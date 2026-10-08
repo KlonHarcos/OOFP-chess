@@ -10,7 +10,7 @@ case class CastlingRights(
     blackKing: Boolean = true,
     blackQueen: Boolean = true
 ) {
-    //def getMove(shade: Shade, side: CastlingSide, board: Board): Move = {
+    //def getMove(shade: Shade, side: CastlingSide, board: Board): Notation = {
     //    val Seq(kf, kt, rf, rt) = ((shade, side) match {
     //        case (Dark, KingSide) =>  Seq("e8", "g8", "h8", "f8")
     //        case (Dark, QueenSide) => Seq("e8", "c8", "a8", "d8")
@@ -21,11 +21,19 @@ case class CastlingRights(
     //    Move(kf, kt, isCastles = Some(Move(rf, rt)))
     //}
 
+    def updated(from: Notation, to: Notation): CastlingRights = {
+        if all.forall(b => b == false) then return this
+        val l: Seq[(Shade, CastlingSide)] = Seq(from, to).flatMap(n =>
+            CastlingRights.updateMap.get(n)).flatten
+
+        l.foldLeft(this)((accum, pair) => accum.set(pair))
+    }
+
     def setAll(value: Boolean): CastlingRights = {
         this.copy(blackKing = value, whiteKing = value, blackQueen = value, whiteQueen = value)
     }
-    def set(shade: Shade, side: CastlingSide, value: Boolean = false): CastlingRights = {
-        (shade, side) match {
+    def set(pair: (Shade, CastlingSide), value: Boolean = false): CastlingRights = {
+        pair match {
             case (Dark, KingSide) => this.copy(blackKing = value)
             case (Dark, QueenSide) => this.copy(blackQueen = value)
             case (Light, KingSide) => this.copy(whiteKing = value)
@@ -51,20 +59,32 @@ case class CastlingRights(
         if str.isEmpty then "-" else str
     }
 
-    def fromString(str: String): CastlingRights = {
-        if str == "-" then return CastlingRights(false, false, false, false)
-        var right = CastlingRights()
-        str.foreach{c => 
-            val side = if c.toLower == 'k' then KingSide else QueenSide
-            val shade: Shade = if c.isLower then Dark else Light
-            right = right.set(shade, side)
-        }
-        right
-    }
+    //def fromString(str: String): CastlingRights = {
+    //    if str == "-" then return CastlingRights(false, false, false, false)
+    //    var right = CastlingRights()
+    //    str.foreach{c => 
+    //        val side = if c.toLower == 'k' then KingSide else QueenSide
+    //        val shade: Shade = if c.isLower then Dark else Light
+    //        right = right.set(shade, side)
+    //    }
+    //    right
+    //}
+
+    private def all: Seq[Boolean] = Seq(whiteKing, whiteQueen, blackKing, blackQueen)
 }
 
 object CastlingRights {
     def apply(fenStr: String): CastlingRights = {
         CastlingRights(fenStr.contains('K'), fenStr.contains('Q'), fenStr.contains('k'), fenStr.contains('q'))
     }
+
+    val updateMap: Map[Notation, Seq[(Shade, CastlingSide)]] = Map(
+        ("e1", Seq((Light, KingSide),(Light, QueenSide))),
+        ("a1", Seq((Light, QueenSide))),
+        ("h1", Seq((Light, KingSide))),
+        ("e8", Seq((Dark, KingSide), (Light, QueenSide))),
+        ("a8", Seq((Dark, QueenSide))),
+        ("h8", Seq((Dark, KingSide)))
+    )
+    
 }
