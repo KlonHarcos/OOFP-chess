@@ -155,7 +155,7 @@ case class GameState(
                     case _ => false
                 }
             )
-            case Some(k @King(shade, _)) => (vision ++ castlingRights.getKingMoves(shade)).filter(sqr => invertedPieceMap.get(sqr) match {
+            case Some(k @King(shade, _)) => (vision ++ getLegalCastles(shade)).filter(sqr => invertedPieceMap.get(sqr) match {
                 case Some(other) if other.shade == k.shade => false
                 case _ => true
                 })
@@ -168,7 +168,28 @@ case class GameState(
 
     }
 
-    def isEnPassantSquare(target: Notation): Boolean = enPassantSquare match {
+    private def getCastleMove(shade: Shade, side: CastlingSide): Option[Notation] = {
+
+       if isInCheck(shade) then return None
+
+       if !castlingRights.get(shade, side) then return None
+
+       val freeTiles = (shade, side) match {
+           case (Dark, KingSide) => Seq("f8", "g8")
+           case (Dark, QueenSide) => Seq("b8", "c8", "d8")
+           case (Light, KingSide) => Seq("f1", "g1")
+           case (Light, QueenSide) => Seq("b1", "c1", "d1")
+           case input => throw new IllegalArgumentException(s"Unexpected input: $input")
+       }
+
+       if freeTiles.exists(n => isTileUnderAttack(n)) then return None
+
+       return castlingRights.getKingMove(shade, side)
+    }
+
+    private def getLegalCastles(shade: Shade): Set[Notation] = Set(getCastleMove(shade, KingSide), getCastleMove(shade, QueenSide)).flatten
+
+    private def isEnPassantSquare(target: Notation): Boolean = enPassantSquare match {
         case Some(n) => n == target
         case None => false 
     }

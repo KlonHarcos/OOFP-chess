@@ -23,7 +23,7 @@ case class CastlingRights(
     }
     def getPotentialRookMove(from: Notation, to: Notation): Option[(Notation, Notation)] = CastlingRights.RookMove.get((from, to))
 
-    def getKingMoves(shade: Shade): Set[Notation] = Set(getMove(shade, KingSide), getMove(shade, QueenSide)).flatten
+    def getKingMove(shade: Shade, side: CastlingSide): Option[Notation] = getMove(shade, side)
 
     //def isCastleMove(from: Notation, to: Notation): Boolean = CastlingRights.RookMove.get((from, to)).isDefined
 
