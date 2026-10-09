@@ -10,16 +10,22 @@ case class CastlingRights(
     blackKing: Boolean = true,
     blackQueen: Boolean = true
 ) {
-    //def getMove(shade: Shade, side: CastlingSide, board: Board): Notation = {
-    //    val Seq(kf, kt, rf, rt) = ((shade, side) match {
-    //        case (Dark, KingSide) =>  Seq("e8", "g8", "h8", "f8")
-    //        case (Dark, QueenSide) => Seq("e8", "c8", "a8", "d8")
-    //        case (Light, KingSide) => Seq("e1", "g1", "h1", "f1")
-    //        case (Light, QueenSide) => Seq("e1", "c1", "a1", "d1")
-    //        case input => throw new IllegalArgumentException(s"Unexpected input: $input")
-    //    }).map(board.getTileUnsafe(_))
-    //    Move(kf, kt, isCastles = Some(Move(rf, rt)))
-    //}
+    private def getMove(shade: Shade, side: CastlingSide): Option[Notation] = {
+        if get(shade, side) then Some(CastlingRights.kingMoveMap((shade, side))) else None
+        //val Seq(kf, kt, rf, rt) = ((shade, side) match {
+        //    case (Dark, KingSide) =>  Seq("e8", "g8", "h8", "f8")
+        //    case (Dark, QueenSide) => Seq("e8", "c8", "a8", "d8")
+        //    case (Light, KingSide) => Seq("e1", "g1", "h1", "f1")
+        //    case (Light, QueenSide) => Seq("e1", "c1", "a1", "d1")
+        //    case input => throw new IllegalArgumentException(s"Unexpected input: $input")
+        //})
+        //Move(kf, kt, isCastles = Some(Move(rf, rt)))
+    }
+    def getPotentialRookMove(from: Notation, to: Notation): Option[(Notation, Notation)] = CastlingRights.RookMove.get((from, to))
+
+    def getKingMoves(shade: Shade): Set[Notation] = Set(getMove(shade, KingSide), getMove(shade, QueenSide)).flatten
+
+    //def isCastleMove(from: Notation, to: Notation): Boolean = CastlingRights.RookMove.get((from, to)).isDefined
 
     def updated(from: Notation, to: Notation): CastlingRights = {
         if all.forall(b => b == false) then return this
@@ -85,6 +91,20 @@ object CastlingRights {
         ("e8", Seq((Dark, KingSide), (Light, QueenSide))),
         ("a8", Seq((Dark, QueenSide))),
         ("h8", Seq((Dark, KingSide)))
+    )
+
+    val kingMoveMap: Map[(Shade, CastlingSide), Notation] = Map(
+        ((Dark, KingSide), "g8"),
+        ((Dark, QueenSide), "c8"),
+        ((Light, KingSide), "g1"),
+        ((Light, QueenSide), "c1")
+    )
+
+    val RookMove: Map[(Notation, Notation), (Notation, Notation)] = Map(
+        (("e8", "g8"), ("h8", "f8")),
+        (("e8", "c8"), ("a8", "d8")),
+        (("e1", "g1"), ("h1", "f1")),
+        (("e1", "c1"), ("a1", "d1"))
     )
     
 }
