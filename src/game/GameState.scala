@@ -9,7 +9,9 @@ case class GameState(
     enPassantSquare: Option[Notation],
     castlingRights: CastlingRights,
     piecePositions: PieceMap,
-    pieceVision: Map[Piece, Set[Notation]]
+    pieceVision: Map[Piece, Set[Notation]],
+    halfMoveClock: Int,
+    fullMoveClock: Int
 ) {
     private def changeTurn: GameState = this.copy(hasTurn = hasTurn.other)
     private lazy val opponentVision: PieceMap = piecePositions.collect {
@@ -207,6 +209,7 @@ case class GameState(
         if p.shade != hasTurn then throw new Exception("illegal piece is making a move")
         val from = piecePositions(p)
         val newPMap = piecePositions.removePieceAt(p, to).castledRookMoved(p, to).updated(p, to)
+        val isCapture = invertedPieceMap.get(to).isDefined 
         val enPass: Option[Notation] = p match {
             case pawn @ Pawn(_, _) if pawn.didJump(from, to) => Some(pawn.getEnPassantSqr(from))
             case _ => None
@@ -216,7 +219,9 @@ case class GameState(
             pieceVision = updatedVisions(from, to, newPMap),
             piecePositions = newPMap,
             castlingRights = castlingRights.updated(from, to),
-            enPassantSquare = enPass
+            enPassantSquare = enPass,
+            halfMoveClock = if p.isInstanceOf[Pawn] || isCapture then 0 else halfMoveClock + 1,
+            fullMoveClock = if hasTurn == Dark then fullMoveClock + 1 else fullMoveClock
         )
     }
 
@@ -236,7 +241,7 @@ case class GameState(
            case Dark => "b"
        }
 
-       Seq[String](boardAsString(), nextToMove, castlingRights.toString, enPass, "0", "1").mkString(" ")
+       Seq[String](boardAsString(), nextToMove, castlingRights.toString, enPass, halfMoveClock.toString, fullMoveClock.toString).mkString(" ")
     }
 
     def boardAsString(): String = {var strBuilder = ""
@@ -305,12 +310,14 @@ object GameState {
         }
         val pieceMap = Map.from(pairs)
 
-        val noVis =GameState(
+        val noVis = GameState(
             hasTurn,
             enPassantMove,
             castlingRights,
             pieceMap,
-            Map.empty[Piece, Set[Notation]]
+            Map.empty[Piece, Set[Notation]],
+            halfMoveClock.toInt,
+            fullMoveClock.toInt
         )
 
         noVis.setVision()
