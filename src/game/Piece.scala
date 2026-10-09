@@ -68,10 +68,23 @@ case class Pawn(shade: Shade, id: PieceId = -1) extends Piece {
         case Dark => (South, SouthEast, SouthWest)
     }
 
-    private val startingRank = shade match {
+    private val startingRank: Int = shade match {
         case Dark => 7
         case Light => 2
     }
+
+    private val jumpRank: Int = shade match {
+        case Dark => 5
+        case Light => 4
+    }
+
+    private val enPassRank: Int = shade match {
+        case Dark => 6
+        case Light => 3
+    }
+
+    def didJump(from: Notation, to: Notation): Boolean = from.rank == startingRank && to.rank == jumpRank
+    def getEnPassantSqr(from: Notation): Notation = Notation(from.file, enPassRank)
 
 }
 

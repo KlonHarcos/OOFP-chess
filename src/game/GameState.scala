@@ -4,7 +4,7 @@ import scala.collection.mutable.Map as MMap
 
 case class GameState(
     hasTurn: Shade,
-    enPassantMove: Option[Notation],
+    enPassantSquare: Option[Notation],
     castlingRights: CastlingRights,
     piecePositions: Map[Piece, Notation],
     pieceVision: Map[Piece, Set[Notation]]
@@ -132,7 +132,7 @@ case class GameState(
 
     }
 
-    def isEnPassantSquare(target: Notation): Boolean = enPassantMove match {
+    def isEnPassantSquare(target: Notation): Boolean = enPassantSquare match {
         case Some(n) => n == target
         case None => false 
     }
@@ -150,11 +150,16 @@ case class GameState(
         if p.shade != hasTurn then throw new Exception("illegal piece is making a move")
         val newPMap = removePieceAt(p, to).updated(p, to)
         val from = piecePositions(p)
+        val enPass: Option[Notation] = p match {
+            case pawn @ Pawn(_, _) if pawn.didJump(from, to) => Some(pawn.getEnPassantSqr(from))
+            case _ => None
+        }
         this.copy(
             hasTurn = hasTurn.other, 
             pieceVision = updatedVisions(from, to, newPMap),
             piecePositions = newPMap,
-            castlingRights = castlingRights.updated(from, to)
+            castlingRights = castlingRights.updated(from, to),
+            enPassantSquare = enPass
         )
     }
 
