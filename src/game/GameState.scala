@@ -30,8 +30,7 @@ case class GameState(
         val p = invertedPieceMap.get(from)
         
         p match {
-            case Some(piece) if piece.shade == hasTurn && getPseudoLegalMoves(p).contains(to)  =>
-                if isDangerous(from, to) then return this
+            case Some(piece) if piece.shade == hasTurn && getPseudoLegalMoves(p).contains(to) && !isDangerous(from, to)  =>
                 makeMove(piece, to)
             case _ => this
         }
@@ -149,7 +148,7 @@ case class GameState(
 
     private def makeMove(p: Piece, to: Notation): GameState = {
         if p.shade != hasTurn then throw new Exception("illegal piece is making a move")
-        val newPMap = removePieceAt(to).updated(p, to)
+        val newPMap = removePieceAt(p, to).updated(p, to)
         val from = piecePositions(p)
         this.copy(
             hasTurn = hasTurn.other, 
@@ -159,14 +158,34 @@ case class GameState(
         )
     }
 
-    private def removePieceAt(target: Notation): Map[Piece, Notation] = {
+    object EnPassant {
+        def squareToRemove(attacker: Piece, targetSquare: Notation) = {
+
+        }
+    }
+
+    private def removePieceAt(attacker: Piece, target: Notation): Map[Piece, Notation] = { 
         val p = invertedPieceMap.get(target)
         p match {
+            case None if isEnPassantSquare(target) && attacker.isInstanceOf[Pawn] => {
+                val newTarget = hasTurn match {
+                    case Dark => target.at(North)
+                    case Light => target.at(South)
+                }
+                removePieceAt(attacker, newTarget)
+            }
             case Some(value) => piecePositions.removed(value)
             case None => piecePositions
         }
     }
+
+    private def removePieceAt(attacker: Piece, target: Option[Notation]): Map[Piece, Notation] = target match {
+        case None => piecePositions
+        case Some(value) => removePieceAt(attacker, value)
+    }
 }
+
+
 
 
 object GameState {
