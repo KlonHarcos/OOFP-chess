@@ -32,7 +32,7 @@ object Notation {
         file.toString + rank.toString
     }
 
-    val all: Seq[Notation] = for (l <- 'a' to 'h'; n <- 1 to 8) yield Notation(l, n)
+    val all: Seq[Notation] = (for (n <- 8 to 1 by -1; l <- 'a' to 'h') yield Notation(l, n))
 
     val PreComputedVis: Map[(Notation, Direction), Seq[Notation]] = {
         val pairs = for (n <- Notation.all; d <- Direction.all) yield ((n, d), n.getAllinDir(d))

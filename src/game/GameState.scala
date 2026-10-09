@@ -59,6 +59,8 @@ case class GameState(
         }
     }
 
+    println(this.toString)
+
     def tryMove(from: Notation, to: Notation): GameState = {
         val p = invertedPieceMap.get(from)
         
@@ -225,6 +227,40 @@ case class GameState(
 
         }
     }
+
+    override def toString(): String = {
+       val enPass: String = enPassantSquare match {
+           case None => "-"
+           case Some(value) => value
+       }
+       val nextToMove = hasTurn match {
+           case Light => "w"
+           case Dark => "b"
+       }
+
+       Seq[String](boardAsString(), nextToMove, castlingRights.toString, enPass, "0", "1").mkString(" ")
+    }
+
+    def boardAsString(): String = {var strBuilder = ""
+       val ranks = Notation.all.grouped(8)
+       for (rank <- ranks) {
+           var emptyCounter = 0
+           for (sqr <- rank) {
+                invertedPieceMap.get(sqr) match {
+                    case None => emptyCounter += 1
+                    case Some(p) if emptyCounter == 0 => strBuilder += p.name
+                    case Some(p) => {
+                        strBuilder += emptyCounter.toString + p.name
+                        emptyCounter = 0
+                    } 
+                }
+            }
+            if emptyCounter != 0 then strBuilder += emptyCounter
+            strBuilder += "/"
+       }
+       strBuilder = strBuilder.dropRight(1)
+       strBuilder
+   }
 
     
 }

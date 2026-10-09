@@ -12,20 +12,11 @@ case class CastlingRights(
 ) {
     private def getMove(shade: Shade, side: CastlingSide): Option[Notation] = {
         if get(shade, side) then Some(CastlingRights.kingMoveMap((shade, side))) else None
-        //val Seq(kf, kt, rf, rt) = ((shade, side) match {
-        //    case (Dark, KingSide) =>  Seq("e8", "g8", "h8", "f8")
-        //    case (Dark, QueenSide) => Seq("e8", "c8", "a8", "d8")
-        //    case (Light, KingSide) => Seq("e1", "g1", "h1", "f1")
-        //    case (Light, QueenSide) => Seq("e1", "c1", "a1", "d1")
-        //    case input => throw new IllegalArgumentException(s"Unexpected input: $input")
-        //})
-        //Move(kf, kt, isCastles = Some(Move(rf, rt)))
     }
     def getPotentialRookMove(from: Notation, to: Notation): Option[(Notation, Notation)] = CastlingRights.RookMove.get((from, to))
 
     def getKingMove(shade: Shade, side: CastlingSide): Option[Notation] = getMove(shade, side)
 
-    //def isCastleMove(from: Notation, to: Notation): Boolean = CastlingRights.RookMove.get((from, to)).isDefined
 
     def updated(from: Notation, to: Notation): CastlingRights = {
         if all.forall(b => b == false) then return this
@@ -64,17 +55,6 @@ case class CastlingRights(
 
         if str.isEmpty then "-" else str
     }
-
-    //def fromString(str: String): CastlingRights = {
-    //    if str == "-" then return CastlingRights(false, false, false, false)
-    //    var right = CastlingRights()
-    //    str.foreach{c => 
-    //        val side = if c.toLower == 'k' then KingSide else QueenSide
-    //        val shade: Shade = if c.isLower then Dark else Light
-    //        right = right.set(shade, side)
-    //    }
-    //    right
-    //}
 
     private def all: Seq[Boolean] = Seq(whiteKing, whiteQueen, blackKing, blackQueen)
 }
