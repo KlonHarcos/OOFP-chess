@@ -59,8 +59,9 @@ case class Pawn(shade: Shade, id: PieceId = -1) extends Piece {
         val (forwardDir, sideE, sideW) = moveDirs
         val allForward = n.getVisInDir(forwardDir)
         val forward = if n.rank == startingRank then allForward.take(2) else allForward.take(1)
-        val captureTiles = Seq(sideE, sideW).flatMap(d => n.at(d))
-        Set(forward, captureTiles)
+        val captureTileEast = Seq(n.at(sideE)).flatten
+        val captureTileWest = Seq(n.at(sideW)).flatten
+        Set(forward, captureTileWest, captureTileEast)
     }
 
     private val moveDirs = shade match {

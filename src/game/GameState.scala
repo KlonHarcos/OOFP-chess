@@ -73,7 +73,6 @@ case class GameState(
 
     private def setVision(): GameState = {
         val occupiedSquares = piecePositions.values.toSet
-        println(piecePositions.keys)
         val pairs = piecePositions.keys.map{ piece => 
             val pos = piecePositions(piece)
             val naiveVision = piece.movePattern(pos)
@@ -87,7 +86,6 @@ case class GameState(
         }.toSeq
 
         val visMap = Map.from(pairs)
-
         this.copy(pieceVision = visMap)
     }
 
