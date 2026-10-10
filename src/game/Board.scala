@@ -4,7 +4,7 @@ import engine.graphics.{Rectangle, Position, Black, White}
 import scala.collection.mutable.Map as MMap
 
 class Board(tiles: MMap[Notation, Tile]) {
-    var state: GameState = GameState(Board.FenCastles)
+    var state: GameState = GameState(Board.FenPromotion)
     refreshVisuals()
     
     def refreshVisuals(): Unit = {
@@ -12,6 +12,15 @@ class Board(tiles: MMap[Notation, Tile]) {
         val pieceMap = state.piecePositions
         pieceMap.keys.foreach(p => placePiece(pieceMap(p), Some(p)))
     }
+
+    def getGameEndMessage: Option[String] = state.getWinner() match {
+            case None => None
+            case Some(either) => either match {
+                case Right(value) => Some(f"$value won by Checkmate!")
+                case Left(value) => Some(f"Its draw by $value")
+            }
+        }
+    
 
     def placePiece(tile: Tile, p: Option[Piece]) = {
         tiles(tile.name) = tile.copy(piece = p)
@@ -74,4 +83,8 @@ object Board {
     val FenEnPas = "rnbqkbnr/p2ppp2/2p3pp/Pp6/8/3PB3/1PP1PPPP/RN1QKBNR w KQkq b6 0 5"
     val FenEnPasInternal = "rnbqkbnr/pp1ppp2/2p3pp/P7/8/3PB3/1PP1PPPP/RN1QKBNR b KQkq - 1 4"
     val FenCastles = "r1bqk2r/pp1p2pp/2n1p2n/2p1bp2/1P6/P1N1P1P1/QBPPNPBP/R3K2R w KQq - 5 10"
+    val FenMoveCount = "7k/4B3/p5b1/8/8/8/8/7K w - - 98 100"
+    val FenM1 = "rnbqkbnr/ppppp2p/8/5pp1/4P3/2P5/PP1P1PPP/RNBQKBNR w KQkq g6 0 3"
+    val FenStaleMate = "k7/8/1Q6/8/8/8/8/7K b - - 0 1"
+    val FenPromotion = "7k/R1P5/8/8/8/8/8/K7 w - - 0 1"
 }

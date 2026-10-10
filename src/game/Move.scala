@@ -1,8 +1,6 @@
 package game
 
-import org.w3c.dom.Notation
-
-case class Move(from: Notation, to: Notation, isCastles: Option[Move] = None, isEnPassant: Option[Tile] = None) {
+case class Move(from: Notation, to: Notation) {
     def ==(f: Notation, t: Notation): Boolean = {
         this.from == f && this.to == t
     }
@@ -15,15 +13,3 @@ case class Move(from: Notation, to: Notation, isCastles: Option[Move] = None, is
 }
 
 case class enPassant(pawnTarget: Notation, pawnToRemove: Notation)
-
-
-object Move {
-    def enPassantFromString(fen: String): Option[Move] = {
-        None
-        // if fen == "-" then return None
- 
-        // val takeTile: Notation = fen
-        // val removeTileRank = if takeTile.rank == 6 then 5 else 4
-        // Some(enPassant(takeTile, Notation(takeTile.file, removeTileRank.toString))
-    }
-}

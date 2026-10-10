@@ -5,9 +5,12 @@ import engine.graphics.Green
 import engine.graphics.Position
 import engine.graphics.Rectangle
 
-abstract trait Shade {val other: Shade}
-case object Dark extends Shade {val other = Light}
-case object Light extends Shade{val other = Dark}
+abstract trait Shade {
+    val other: Shade
+    val asString: String
+}
+case object Dark extends Shade {val other = Light; val asString: String = "Black"}
+case object Light extends Shade{val other = Dark; val asString: String = "White"}
 
 
 case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece] = None) {

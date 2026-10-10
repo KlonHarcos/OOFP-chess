@@ -4,7 +4,7 @@ import engine.ChessBase
 import processing.core.PApplet
 import engine.graphics.Rectangle
 import engine.graphics.Position
-import engine.graphics.{HighlightGreen, LowHighlightGreen}
+import engine.graphics.{HighlightGreen, LowHighlightGreen, Red}
 import game.{Shade, Light, Dark}
 import scala.collection.mutable.Map
 
@@ -17,13 +17,27 @@ class ChessGame extends ChessBase {
     var highlightedTile: Option[Tile] = None
     var validMoveHighlights: Seq[Tile] = Seq.empty[Tile]
     var debugHighlights: Seq[Tile] = Seq.empty[Tile]
+    
 
     override def draw(): Unit = {
         drawBoard()
         drawHighlightedTile()
         drawValidMoves()
+        drawGameOverScreen()
         //if player2.shade == board.hasTurn then board.tryMove(player2.getMove(board))
     }
+
+    def drawGameOverScreen(): Unit = {
+        board.getGameEndMessage match {
+            case None => ()
+            case Some(value) =>
+                fill(Red)
+                drawTextCentered(value, 50, Position(appSize.toFloat/2, appSize.toFloat/2))
+        }
+        
+    }
+
+    
 
     def drawBoard() = {
         background(255)

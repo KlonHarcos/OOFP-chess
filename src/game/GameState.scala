@@ -3,6 +3,7 @@ package game
 import scala.collection.mutable.Map as MMap
 
 type PieceMap = Map[Piece, Notation]
+type gameOverMessage = Either[String, String]
 
 case class GameState(
     hasTurn: Shade,
@@ -50,6 +51,13 @@ case class GameState(
         }
 
 
+        def updatePiecePos(piece: Piece, target: Notation): PieceMap = {
+            piece match {
+                case p @ Pawn(shade, id) => i.updated(Queen(shade, id), target).removed(p)
+                case piece => i.updated(piece, target)
+            }
+        }
+
         def castledRookMoved(optKing: Piece, to: Notation): PieceMap = {
             if !optKing.isInstanceOf[King] then return i
             val from = i(optKing)
@@ -61,7 +69,18 @@ case class GameState(
         }
     }
 
-    println(this.toString)
+    def getWinner(): Option[gameOverMessage] = {
+        if halfMoveClock == 100 then return Some(Left("move count"))
+        if !legalMoves.isEmpty then return None
+        else if isInCheck(hasTurn) then return Some(Right(hasTurn.other.asString))
+        else Some(Left("stale-mate"))
+    }
+
+    lazy val legalMoves: Set[Move] = piecePositions.flatMap{ 
+        case (piece, pos) if piece.shade == hasTurn =>
+            getPseudoLegalMoves(Some(piece)).collect{case n: Notation if !isDangerous(pos, n) => Move(pos, n)}
+        case _ => Set.empty
+    }.toSet
 
     def tryMove(from: Notation, to: Notation): GameState = {
         val p = invertedPieceMap.get(from)
@@ -196,19 +215,22 @@ case class GameState(
         case None => false 
     }
 
-    def updatedVisions(from: Notation, to: Notation, pMap: PieceMap): Map[Piece, Set[Notation]] = {
-        pieceVision.flatMap{case (k,v) =>
-            if !pMap.get(k).isDefined then None // filter out removed piece
-            else if k.isInstanceOf[Knight] && piecePositions(k) != from then Some(k, pieceVision(k)) //Knight vision stays regardless if it hasnt moved
-            else if v.contains(from) || v.contains(to) then Some(recalculateVision(k, pMap))
-            else Some(k,v)
+    def updatedVisions(from: Notation, to: Notation, pMap: PieceMap): Map[Piece, Set[Notation]] = pMap.map{case (piece, newPos) =>
+        if piece.isInstanceOf[Knight] && newPos != to then (piece, pieceVision(piece)) //Knight vision stays regardless if it hasnt moved
+        else {
+            val currVis = pieceVision.get(piece)
+            currVis match {
+                case None => recalculateVision(piece, pMap) //means piece appeared == promotion
+                case Some(vis) if vis.contains(from) || vis.contains(to) => recalculateVision(piece, pMap)
+                case Some(vis) => (piece, vis)
+            }
         }
     }
 
     private def makeMove(p: Piece, to: Notation): GameState = {
         if p.shade != hasTurn then throw new Exception("illegal piece is making a move")
         val from = piecePositions(p)
-        val newPMap = piecePositions.removePieceAt(p, to).castledRookMoved(p, to).updated(p, to)
+        val newPMap = piecePositions.removePieceAt(p, to).castledRookMoved(p, to).updatePiecePos(p, to)
         val isCapture = invertedPieceMap.get(to).isDefined 
         val enPass: Option[Notation] = p match {
             case pawn @ Pawn(_, _) if pawn.didJump(from, to) => Some(pawn.getEnPassantSqr(from))
@@ -223,12 +245,6 @@ case class GameState(
             halfMoveClock = if p.isInstanceOf[Pawn] || isCapture then 0 else halfMoveClock + 1,
             fullMoveClock = if hasTurn == Dark then fullMoveClock + 1 else fullMoveClock
         )
-    }
-
-    object EnPassant {
-        def squareToRemove(attacker: Piece, targetSquare: Notation) = {
-
-        }
     }
 
     override def toString(): String = {
@@ -264,7 +280,7 @@ case class GameState(
        strBuilder = strBuilder.dropRight(1)
        strBuilder
    }
-
+    
     
 }
 

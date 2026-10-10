@@ -47,4 +47,11 @@ class ChessBase extends PApplet {
         fill(r.color)
         rect(r.pos.x, r.pos.y, r.size, r.size)
     }
+
+    def drawTextCentered(string: String, size: Float, center: Position): Unit = {
+        val (x, y) = (center.x, center.y-(size/2))
+        textAlign(PConstants.CENTER, PConstants.CENTER)
+        textSize(size)
+        text(string, x, y)
+    }
 }
