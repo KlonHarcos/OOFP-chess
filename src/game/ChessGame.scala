@@ -11,12 +11,14 @@ import scala.collection.mutable.Map
 
 class ChessGame extends ChessBase {
     val board = Board(boardSize, appSize)
-    //val player2: Player = new AlphaBetaBot(Dark)
-    val player2: Option[Player] = None
+    //val player2: OptionPlayer = Some(new AlphaBetaBot(Dark))
+    val player2 = Some(new StockFish(Dark))
+    //val player2: Option[Player] = None
 
     var highlightedTile: Option[Tile] = None
     var validMoveHighlights: Seq[Tile] = Seq.empty[Tile]
-    var debugHighlights: Seq[Tile] = Seq.empty[Tile]
+    var lastClick: Long = 0
+    val MaxWait = 500
     
 
     override def draw(): Unit = {
@@ -24,6 +26,7 @@ class ChessGame extends ChessBase {
         drawHighlightedTile()
         drawValidMoves()
         drawGameOverScreen()
+        tryP2Move()
     }
 
     def drawGameOverScreen(): Unit = {
@@ -52,7 +55,6 @@ class ChessGame extends ChessBase {
 
     def drawHighlightedTile() = highlightedTile.foreach( r => drawRectangle(r.rect.copy(color = HighlightGreen)))
     def drawValidMoves() = validMoveHighlights.foreach(r => drawRectangle(r.rect.copy(color = LowHighlightGreen)))
-    def drawDebug() = debugHighlights.foreach(r => drawRectangle(r.rect.copy(color = LowHighlightGreen)))
     def clearHighlights(): Unit = {
         highlightedTile = None
         validMoveHighlights = Seq.empty[Tile]
@@ -62,28 +64,28 @@ class ChessGame extends ChessBase {
         val currHighlight: Option[Tile] = highlightedTile 
         (currHighlight, board.getTile(mouse)) match {
             case (Some(from), Some(to)) if from == to => clearHighlights()
-            case (Some(from), Some(to)) => clearHighlights(); board.movePiece(from, to); board.refreshVisuals(); draw();
+            case (Some(from), Some(to)) => clearHighlights(); board.movePiece(from, to); board.refreshVisuals(); drawBoard()
             case (_, Some(to)) => 
                 highlightedTile = Some(to)
                 validMoveHighlights = board.getMoves(to.piece)
             case _ => ()
         }
-        tryP2Move()
+
+        lastClick = System.currentTimeMillis()
     }
 
     def tryP2Move(): Unit = {
+        if (System.currentTimeMillis() - lastClick) < MaxWait then return
         for (p2 <- player2) {
             if (p2.shade == board.state.hasTurn) {
-                board.movePiece(p2.getMove(board.state))
-                board.refreshVisuals()
+                val move = p2.getMove(board.state)
+                if (move != Move.empty) {
+                    board.movePiece(move)
+                    board.refreshVisuals()
+                }
             }
         }
         
-    }
-
-
-    def drawPiece() = {
-
     }
 }
 

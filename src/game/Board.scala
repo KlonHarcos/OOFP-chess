@@ -3,8 +3,8 @@ package game
 import engine.graphics.{Rectangle, Position, Black, White}
 import scala.collection.mutable.Map as MMap
 
-class Board(tiles: MMap[Notation, Tile]) {
-    var state: GameState = GameState(Board.FenStart)
+class Board(tiles: MMap[Notation, Tile], startPos: String = Board.FenStart) {
+    var state: GameState = GameState(startPos)
     refreshVisuals()
     
     def refreshVisuals(): Unit = {
@@ -47,6 +47,22 @@ class Board(tiles: MMap[Notation, Tile]) {
 
 object Board {
     def apply(boardSize: Int, screenDims: Int): Board = {
+        val tiles = createTiles(boardSize, screenDims)
+        new Board(tiles)
+    }
+
+    def apply(boardSize: Int, screenDims: Int, fen: String): Board = {
+        val tiles = createTiles(boardSize, screenDims)
+        new Board(tiles, fen)
+    }
+
+    def getShade(notation: String): Shade = {
+        val (l, n) = notationStot(notation)
+        if (l.toInt + n) % 2 == 0 then Dark else Light
+    }
+
+    def createTiles(boardSize: Int, screenDims: Int): MMap[Notation, Tile] = {
+        val tileSize = screenDims.toFloat / boardSize
         def makeTile(notation: Notation): Tile = {
             val r = makeTileRect(notation)
             val s = getShade(notation)
@@ -63,21 +79,12 @@ object Board {
             }
             Rectangle(pos, color, tileSize)
         }
-        def tileSize = screenDims.toFloat / boardSize
-        val tiles: MMap[Notation, Tile] = {
-            val pairs = for {
-                l <- 'a' until ('a' + boardSize).toChar
-                n <- 1 to boardSize
-                str = l.toString + n.toString
-            } yield (str, makeTile(str))
-            MMap.from(pairs)
-        }
-        new Board(tiles)
-    }
-
-    def getShade(notation: String): Shade = {
-        val (l, n) = notationStot(notation)
-        if (l.toInt + n) % 2 == 0 then Dark else Light
+        val pairs = for {
+            l <- 'a' until ('a' + boardSize).toChar
+            n <- 1 to boardSize
+            str = l.toString + n.toString
+        } yield (str, makeTile(str))
+        MMap.from(pairs)
     }
 
     def notationStot(notation: String): (Char, Int) = (notation(0), notation(1).asDigit)  

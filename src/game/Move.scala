@@ -12,4 +12,11 @@ case class Move(from: Notation, to: Notation) {
     }
 }
 
-case class enPassant(pawnTarget: Notation, pawnToRemove: Notation)
+object Move {
+    def fromString(str: String): Move = {
+        val seq = str.grouped(2).toSeq
+        Move(seq(0), seq(1))
+    }
+
+    def empty: Move = Move("", "")
+}
