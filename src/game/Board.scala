@@ -30,7 +30,7 @@ class Board(tiles: MMap[Notation, Tile]) {
         tiles(tile) = tiles(tile).copy(piece = p)
     }
 
-    def getMoves(piece: Option[Piece]): Seq[Tile] = state.getPseudoLegalMoves(piece).map(tiles(_)).toSeq
+    def getMoves(piece: Option[Piece]): Seq[Tile] = state.getLegalTargetTiles(piece).map(tiles(_)).toSeq
 
     def movePiece(from: Tile, to: Tile): Unit = {
         println("moving piece")

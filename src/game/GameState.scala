@@ -14,20 +14,21 @@ case class GameState(
     halfMoveClock: Int,
     fullMoveClock: Int
 ) {
-    private def changeTurn: GameState = this.copy(hasTurn = hasTurn.other)
     private lazy val opponentVision: PieceMap = piecePositions.collect {
         case (k, v) if k.shade == hasTurn.other => (k, v)
     }
-    val invertedPieceMap = piecePositions.map(_.swap)
-    lazy val (whiteTargets, blackTargets) = {
+    
+    private val invertedPieceMap = piecePositions.map(_.swap)
+    
+    private lazy val (whiteTargets, blackTargets) = {
         val parts = pieceVision.partition{ case (p, _) => p.shade == Light}
         (parts._1.valuesIterator.flatten.toSet, parts._2.valuesIterator.flatten.toSet)
     }
-    lazy val whiteKing: King = piecePositions.keys.collectFirst {case k: King if k.shade == Light => k}
-        .getOrElse(throw new Exception("White king is not on board"))    
-    
-    lazy val blackKing: King = piecePositions.keys.collectFirst {case k: King if k.shade == Dark => k}
-        .getOrElse(throw new Exception("White king is not on board"))
+
+    private lazy val whiteKing: King = findKingSquare(Light)
+    private lazy val blackKing: King = findKingSquare(Dark)
+    private def findKingSquare(shade: Shade) = piecePositions.keysIterator.collectFirst {case k: King if k.shade == shade => k}
+            .getOrElse(throw new Exception(f"${shade.asString} king is not on board"))
 
     extension (i: PieceMap) {
         private def removePieceAt(attacker: Piece, target: Notation): PieceMap = { 
@@ -51,14 +52,14 @@ case class GameState(
         }
 
 
-        def updatePiecePos(piece: Piece, target: Notation): PieceMap = {
+        private def updatePiecePos(piece: Piece, target: Notation): PieceMap = {
             piece match {
                 case p @ Pawn(shade, id) => i.updated(Queen(shade, id), target).removed(p)
                 case piece => i.updated(piece, target)
             }
         }
 
-        def castledRookMoved(optKing: Piece, to: Notation): PieceMap = {
+        private def castledRookMoved(optKing: Piece, to: Notation): PieceMap = {
             if !optKing.isInstanceOf[King] then return i
             val from = i(optKing)
             val rookMove: Option[(Notation, Notation)] = castlingRights.getPotentialRookMove(from, to)
@@ -71,22 +72,28 @@ case class GameState(
 
     def getWinner(): Option[gameOverMessage] = {
         if halfMoveClock == 100 then return Some(Left("move count"))
-        if !legalMoves.isEmpty then return None
+        if !allLegalMoves.isEmpty then return None
         else if isInCheck(hasTurn) then return Some(Right(hasTurn.other.asString))
         else Some(Left("stale-mate"))
     }
 
-    lazy val legalMoves: Set[Move] = piecePositions.flatMap{ 
-        case (piece, pos) if piece.shade == hasTurn =>
-            getPseudoLegalMoves(Some(piece)).collect{case n: Notation if !isDangerous(pos, n) => Move(pos, n)}
-        case _ => Set.empty
-    }.toSet
+    lazy val allLegalMoves: Set[Move] = allPieces.flatMap{p =>
+        val from = piecePositions(p)
+        getLegalTargetTiles(Some(p)).map(to => Move(from, to))
+    }
+
+    def getLegalTargetTiles(p: Option[Piece]): Set[Notation] = p match {
+        case Some(piece) =>  getPseudoLegalMoves(piece).filterNot(isDangerous(piecePositions(piece), _))
+        case None => Set.empty[Notation]
+    }
+
+    private lazy val allPieces: Set[Piece] = piecePositions.keys.toSet  
 
     def tryMove(from: Notation, to: Notation): GameState = {
         val p = invertedPieceMap.get(from)
         
         p match {
-            case Some(piece) if piece.shade == hasTurn && getPseudoLegalMoves(p).contains(to) && !isDangerous(from, to)  =>
+            case Some(piece) if piece.shade == hasTurn && getLegalTargetTiles(p).contains(to)  =>
                 makeMove(piece, to)
             case _ => this
         }
@@ -125,7 +132,7 @@ case class GameState(
         (piece, vision)
     }
 
-    def getVisionFor(piece: Option[Piece]): Set[Notation] = piece match {
+    private def getVisionFor(piece: Option[Piece]): Set[Notation] = piece match {
         case Some(p) => pieceVision(p)
         case None => Set.empty[Notation]
     }
@@ -164,10 +171,10 @@ case class GameState(
     }
 
 
-    def getPseudoLegalMoves(piece: Option[Piece]): Set[Notation] = {
+    private def getPseudoLegalMoves(piece: Piece): Set[Notation] = {
         val vision = getVisionFor(piece)
         piece match {
-            case Some(p @Pawn(shade, id)) => vision.filter(sqr => 
+            case p @Pawn(shade, id) => vision.filter(sqr => 
                 val sameFileAsPawn = sqr.file == piecePositions(p).file
                 invertedPieceMap.get(sqr) match {
                     case None if sameFileAsPawn => true
@@ -176,15 +183,14 @@ case class GameState(
                     case _ => false
                 }
             )
-            case Some(k @King(shade, _)) => (vision ++ getLegalCastles(shade)).filter(sqr => invertedPieceMap.get(sqr) match {
+            case k @King(shade, _) => (vision ++ getLegalCastles(shade)).filter(sqr => invertedPieceMap.get(sqr) match {
                 case Some(other) if other.shade == k.shade => false
                 case _ => true
                 })
-            case Some(p) => vision.filter(sqr => invertedPieceMap.get(sqr) match {
+            case p => vision.filter(sqr => invertedPieceMap.get(sqr) match {
                 case Some(other) if other.shade == p.shade => false
                 case _ => true
                 })
-            case _ => Set.empty[Notation]
         }
 
     }
@@ -215,7 +221,7 @@ case class GameState(
         case None => false 
     }
 
-    def updatedVisions(from: Notation, to: Notation, pMap: PieceMap): Map[Piece, Set[Notation]] = pMap.map{case (piece, newPos) =>
+    private def updatedVisions(from: Notation, to: Notation, pMap: PieceMap): Map[Piece, Set[Notation]] = pMap.map{case (piece, newPos) =>
         if piece.isInstanceOf[Knight] && newPos != to then (piece, pieceVision(piece)) //Knight vision stays regardless if it hasnt moved
         else {
             val currVis = pieceVision.get(piece)
@@ -260,7 +266,7 @@ case class GameState(
        Seq[String](boardAsString(), nextToMove, castlingRights.toString, enPass, halfMoveClock.toString, fullMoveClock.toString).mkString(" ")
     }
 
-    def boardAsString(): String = {var strBuilder = ""
+    private def boardAsString(): String = {var strBuilder = ""
        val ranks = Notation.all.grouped(8)
        for (rank <- ranks) {
            var emptyCounter = 0
