@@ -28,7 +28,6 @@ case class GameState(
     private lazy val whiteKing: Option[King] = findKingSquare(Light)
     private lazy val blackKing: Option[King] = findKingSquare(Dark)
     private def findKingSquare(shade: Shade): Option[King] = piecePositions.keysIterator.collectFirst {case k: King if k.shade == shade => k}
-            //.getOrElse(throw new Exception(f"${shade.asString} king is not on board"))
 
     extension (i: PieceMap) {
         private def removePieceAt(attacker: Piece, target: Notation): PieceMap = { 
@@ -125,19 +124,9 @@ case class GameState(
 
     private def setVision(): GameState = {
         val occupiedSquares = piecePositions.values.toSet
-        val pairs = piecePositions.keys.map{ piece => 
-            val pos = piecePositions(piece)
-            val naiveVision = piece.movePattern(pos)
-            val vision: Set[Notation] = naiveVision.flatMap{ s =>
-                if (s.isEmpty) Seq.empty[Notation]
-                val find = s.indexWhere(s => occupiedSquares.contains(s))
-                if find == -1 then s 
-                else s.take(find + 1)
-            }
-            (piece, vision)
-        }.toSeq
-
-        val visMap = Map.from(pairs)
+        val visMap = piecePositions.map{ (piece, pos) => 
+            recalculateVision(piece, piecePositions)
+        }
         this.copy(pieceVision = visMap)
     }
 
@@ -255,11 +244,13 @@ case class GameState(
     }
 
     private def updatedVisions(from: Notation, to: Notation, pMap: PieceMap): Map[Piece, Set[Notation]] = pMap.map{case (piece, newPos) =>
-        if piece.isInstanceOf[Knight] && newPos != to then (piece, pieceVision(piece)) //Knight vision stays regardless if it hasnt moved
+        //Knight vision stays regardless if it hasnt moved
+        if piece.isInstanceOf[Knight] && newPos != to then (piece, pieceVision(piece)) 
         else {
             val currVis = pieceVision.get(piece)
             currVis match {
-                case None => recalculateVision(piece, pMap) //means piece appeared == promotion
+                //None means piece appeared == promotion
+                case None => recalculateVision(piece, pMap) 
                 case Some(vis) if vis.contains(from) || vis.contains(to) => recalculateVision(piece, pMap)
                 case Some(vis) => (piece, vis)
             }

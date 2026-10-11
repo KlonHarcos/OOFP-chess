@@ -1,9 +1,5 @@
 package game
 
-import dotty.tools.dotc.util.optional
-
-//type Movement = Notation => Set[Seq[Notation]]
-
 type PieceId = Int
 
 trait Sliding

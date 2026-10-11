@@ -5,8 +5,6 @@ import engine.graphics.*
 import java.io.File
 
 class ChessBase extends PApplet {
-    var angle = 0.0f
-
     val piecePath: String = "src/images"
 
     def appSize: Int = 1000 

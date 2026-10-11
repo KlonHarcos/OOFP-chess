@@ -25,26 +25,4 @@ case class Tile(shade: Shade, rect: Rectangle, name: String, piece: Option[Piece
     }
 
     override def toString(): String = name
-
-    //def getTilesinDir(dir: Direction, board: Board, range: Int = -1): Seq[Tile] = {
-    //    board.getTile(neighborName(dir)) match {
-    //        case Some(t) if t.piece.isDefined => Seq[Tile](t)
-    //        case Some(t) => t.getTilesRec(dir, board, range)
-    //        case None => Seq.empty[Tile]
-    //    }
-    //}
-
-    //def getTilesRec(dir: Direction, board: Board, range: Int): Seq[Tile] = {
-    //    val newRange = range - 1
-    //    board.getTile(neighborName(dir)) match {
-    //        case Some(t) if (newRange == 0) => Seq[Tile](this)
-    //        case Some(t) if t.piece.isDefined => Seq[Tile](this, t)
-    //        case Some(t) => this +: t.getTilesRec(dir, board, newRange) 
-    //        case None  => Seq[Tile](this)
-    //    }
-    //}
-
-    //def neighborName(dir: Direction): String = {
-    //    dir.getTileName(name)
-    //}
 }

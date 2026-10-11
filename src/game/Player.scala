@@ -24,15 +24,12 @@ class RandomBot(shade: Shade) extends Player(shade: Shade) {
 class StaticEvalBot(shade: Shade) extends RandomBot(shade: Shade) {
     override def getMove(state: GameState): Move = {
         val moveEvals = evaluateAllMoves(state)
-        //moveEvals.foreach(println)
         val best = getBestMoves(moveEvals)
         getRandomMove(best)
     }
 
     def evaluateAllMoves(state: GameState): Set[(Double, Move)] = {
         val moves = state.allLegalMoves
-        //println("all legal moves: ")
-        //moves.foreach(println)
         moves.map{m =>
             val newState = state.tryMoveUnsafe(m.from, m.to)
             (StaticEval.evaluate(newState), m)
@@ -61,7 +58,6 @@ class MiniMaxBot(shade: Shade) extends StaticEvalBot(shade: Shade) {
 
     def evalMovesMiniMax(state: GameState): Set[(Double, Move)] = {
         val moves = state.allLegalMoves
-        //println(moves)
         moves.map{move =>
             val newState = state.tryMove(move.from, move.to)
             (miniMaxEval(newState, MaxDepth), move)
@@ -100,8 +96,6 @@ class AlphaBetaBot(shade: Shade) extends MiniMaxBot(shade: Shade) {
 
     def evalMovesAlphaBeta(state: GameState): Set[(Double, Move)] = {
         val moves = state.allLegalMoves
-        //println(moves)
-        //val isMaxing = state.hasTurn.other == Light
         moves.map{move =>
             val newState = state.tryMove(move.from, move.to)
             (AlphaBetaEval(newState, MaxDepth, Double.NegativeInfinity, Double.PositiveInfinity), move)
