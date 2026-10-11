@@ -3,7 +3,7 @@ package game
 type Notation = String
 
 extension (i: Notation) {
-    def rank: Int = i(1).asDigit
+    def rank: Int = i.drop(1).toInt
     def file: Char =  i(0)
     def isValid: Boolean = (rank >= 1 && rank <= 8) && (file >= 'a' && file <= 'h') 
 

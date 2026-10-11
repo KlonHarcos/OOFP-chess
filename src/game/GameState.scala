@@ -109,6 +109,7 @@ case class GameState(
         val pairs = piecePositions.keys.map{ piece => 
             val pos = piecePositions(piece)
             val naiveVision = piece.movePattern(pos)
+            //println(f"naive vision for: ${piece} = ${naiveVision} ")
             val vision: Set[Notation] = naiveVision.flatMap{ s =>
                 if (s.isEmpty) Seq.empty[Notation]
                 val find = s.indexWhere(s => occupiedSquares.contains(s))

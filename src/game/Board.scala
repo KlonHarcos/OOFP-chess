@@ -4,7 +4,7 @@ import engine.graphics.{Rectangle, Position, Black, White}
 import scala.collection.mutable.Map as MMap
 
 class Board(tiles: MMap[Notation, Tile]) {
-    var state: GameState = GameState(Board.FenStart)
+    var state: GameState = GameState(Board.KnightCheck)
     refreshVisuals()
     
     def refreshVisuals(): Unit = {
@@ -92,4 +92,5 @@ object Board {
     val FenM1 = "rnbqkbnr/ppppp2p/8/5pp1/4P3/2P5/PP1P1PPP/RNBQKBNR w KQkq g6 0 3"
     val FenStaleMate = "k7/8/1Q6/8/8/8/8/7K b - - 0 1"
     val FenPromotion = "7k/R1P5/8/8/8/8/8/K7 w - - 0 1"
+    val KnightCheck = "kn6/8/8/8/8/8/8/N6K w - - 0 1"
 }

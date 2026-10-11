@@ -68,7 +68,7 @@ class ChessGame extends ChessBase {
                 validMoveHighlights = board.getMoves(to.piece)
             case _ => ()
         }
-
+        println(board.state.pieceVision.toSeq)
         tryP2Move()
     }
 

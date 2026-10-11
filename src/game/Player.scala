@@ -9,6 +9,7 @@ abstract class Player(val shade: Shade) {
 
 class RandomBot(shade: Shade) extends Player(shade: Shade) {
     def getMove(state: GameState): Move = {
+        println(state.allLegalMoves)
         getRandomMove(state.allLegalMoves)
     }
 
