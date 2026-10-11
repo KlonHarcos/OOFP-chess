@@ -5,7 +5,7 @@ import engine.graphics.Green
 import engine.graphics.Position
 import engine.graphics.Rectangle
 
-abstract trait Shade {
+sealed abstract trait Shade {
     val other: Shade
     val asString: String
 }
