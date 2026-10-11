@@ -54,7 +54,7 @@ case class GameState(
 
         private def updatePiecePos(piece: Piece, target: Notation): PieceMap = {
             piece match {
-                case p @ Pawn(shade, id) => i.updated(Queen(shade, id), target).removed(p)
+                case p @ Pawn(shade, id) if target.rank == p.promotionRank => i.updated(Queen(shade, id), target).removed(p)
                 case piece => i.updated(piece, target)
             }
         }
@@ -83,8 +83,8 @@ case class GameState(
     }
 
     def getLegalTargetTiles(p: Option[Piece]): Set[Notation] = p match {
-        case Some(piece) =>  getPseudoLegalMoves(piece).filterNot(isDangerous(piecePositions(piece), _))
-        case None => Set.empty[Notation]
+        case Some(piece) if piece.shade == hasTurn =>  getPseudoLegalMoves(piece).filterNot(isDangerous(piecePositions(piece), _))
+        case _ => Set.empty[Notation]
     }
 
     private lazy val allPieces: Set[Piece] = piecePositions.keys.toSet  
@@ -94,6 +94,8 @@ case class GameState(
         
         p match {
             case Some(piece) if piece.shade == hasTurn && getLegalTargetTiles(p).contains(to)  =>
+                println(piece)
+                println(hasTurn)
                 makeMove(piece, to)
             case _ => this
         }
@@ -155,6 +157,7 @@ case class GameState(
         if !isTileUnderAttack(from) && !isInCheck(hasTurn) then return false
 
         //most expensive calc
+        println(f"checking danger for ${piece}")
         val newState = this.makeMove(piece, to)
         if newState.isInCheck(this.hasTurn) then return true
         else return false
