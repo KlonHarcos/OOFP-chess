@@ -25,10 +25,10 @@ case class GameState(
         (parts._1.valuesIterator.flatten.toSet, parts._2.valuesIterator.flatten.toSet)
     }
 
-    private lazy val whiteKing: King = findKingSquare(Light)
-    private lazy val blackKing: King = findKingSquare(Dark)
-    private def findKingSquare(shade: Shade) = piecePositions.keysIterator.collectFirst {case k: King if k.shade == shade => k}
-            .getOrElse(throw new Exception(f"${shade.asString} king is not on board"))
+    private lazy val whiteKing: Option[King] = findKingSquare(Light)
+    private lazy val blackKing: Option[King] = findKingSquare(Dark)
+    private def findKingSquare(shade: Shade): Option[King] = piecePositions.keysIterator.collectFirst {case k: King if k.shade == shade => k}
+            //.getOrElse(throw new Exception(f"${shade.asString} king is not on board"))
 
     extension (i: PieceMap) {
         private def removePieceAt(attacker: Piece, target: Notation): PieceMap = { 
@@ -72,17 +72,27 @@ case class GameState(
 
     def getWinner(): Option[gameOverMessage] = {
         if halfMoveClock == 100 then return Some(Left("move count"))
-        if !allLegalMoves.isEmpty then return None
-        else if isInCheck(hasTurn) then return Some(Right(hasTurn.other.asString))
-        else Some(Left("stale-mate"))
+        if isCheckMate then return Some(Right(hasTurn.other.asString))
+        if isStaleMate then return Some(Left("stale-mate"))
+        None
     }
 
-    def isGameOver: Boolean = getWinner().isDefined
+    def isCheckMate: Boolean = allLegalMoves.isEmpty && isInCheck(hasTurn)
+    def isStaleMate: Boolean = allLegalMoves.isEmpty && !isInCheck(hasTurn)
 
-    lazy val allLegalMoves: Set[Move] = allPieces.flatMap{p =>
+    def isGameOver: Boolean = !whiteKing.isDefined || !blackKing.isDefined || getWinner().isDefined
+
+    lazy val allLegalMoves: Set[Move] = allPieces.collect{case p if p.shade == hasTurn =>
         val from = piecePositions(p)
         getLegalTargetTiles(Some(p)).map(to => Move(from, to))
-    }
+    }.flatten
+
+    lazy val allPseudoLegalMoves = allPieces.collect{case p if p.shade == hasTurn =>
+        val from = piecePositions(p)
+        getPseudoLegalMoves(p).map(to => Move(from, to))
+    }.flatten
+
+
 
     def getLegalTargetTiles(p: Option[Piece]): Set[Notation] = p match {
         case Some(piece) if piece.shade == hasTurn =>  getPseudoLegalMoves(piece).filterNot(isDangerous(piecePositions(piece), _))
@@ -96,8 +106,17 @@ case class GameState(
         
         p match {
             case Some(piece) if piece.shade == hasTurn && getLegalTargetTiles(p).contains(to)  =>
-                //println(piece)
-                println("try move is successful")
+                makeMove(piece, to)
+            case None => println("No piece at this pos"); this
+            case _ => println(f"${Move(from,to)} is illegal on ${hasTurn.asString}'s turn"); this
+        }
+    }
+
+    def tryMoveUnsafe(from: Notation, to: Notation): GameState = {
+        val p = invertedPieceMap.get(from)
+        
+        p match {
+            case Some(piece) if piece.shade == hasTurn  =>
                 makeMove(piece, to)
             case None => println("No piece at this pos"); this
             case _ => println(f"${Move(from,to)} is illegal on ${hasTurn.asString}'s turn"); this
@@ -109,7 +128,6 @@ case class GameState(
         val pairs = piecePositions.keys.map{ piece => 
             val pos = piecePositions(piece)
             val naiveVision = piece.movePattern(pos)
-            //println(f"naive vision for: ${piece} = ${naiveVision} ")
             val vision: Set[Notation] = naiveVision.flatMap{ s =>
                 if (s.isEmpty) Seq.empty[Notation]
                 val find = s.indexWhere(s => occupiedSquares.contains(s))
@@ -161,20 +179,28 @@ case class GameState(
         if !isTileUnderAttack(from) && !isInCheck(hasTurn) then return false
 
         //most expensive calc
-        println(f"checking danger for ${piece}")
         val newState = this.makeMove(piece, to)
         if newState.isInCheck(this.hasTurn) then return true
         else return false
     }
 
-    private def isInCheck(shade: Shade): Boolean = {
+    def isInCheck(shade: Shade): Boolean = {
         val kingPos = getKingPos(shade)
-        tilesUnderAttack(shade).contains(kingPos)
+        kingPos match {
+            case None => true
+            case Some(value) => tilesUnderAttack(shade).contains(value)
+        }
     } 
 
-    private def getKingPos(shade: Shade): Notation = shade match {
-        case Dark => piecePositions(blackKing)
-        case Light => piecePositions(whiteKing)
+    private def getKingPos(shade: Shade): Option[Notation] = {
+        val k = shade match {
+            case Dark => blackKing
+            case Light => whiteKing
+        }
+        k match {
+            case None => None
+            case Some(value) => Some(piecePositions(value))
+        }
     }
 
 

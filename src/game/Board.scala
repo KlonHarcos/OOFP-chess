@@ -4,7 +4,7 @@ import engine.graphics.{Rectangle, Position, Black, White}
 import scala.collection.mutable.Map as MMap
 
 class Board(tiles: MMap[Notation, Tile]) {
-    var state: GameState = GameState(Board.KnightCheck)
+    var state: GameState = GameState(Board.FenStart)
     refreshVisuals()
     
     def refreshVisuals(): Unit = {
@@ -33,12 +33,10 @@ class Board(tiles: MMap[Notation, Tile]) {
     def getMoves(piece: Option[Piece]): Seq[Tile] = state.getLegalTargetTiles(piece).map(tiles(_)).toSeq
 
     def movePiece(from: Tile, to: Tile): Unit = {
-        println("moving piece")
         state = state.tryMove(from.name, to.name)
     }
 
     def movePiece(move: Move): Unit = {
-        println("robot trying move")
         state = state.tryMove(move.from, move.to)
     }
 
@@ -93,4 +91,5 @@ object Board {
     val FenStaleMate = "k7/8/1Q6/8/8/8/8/7K b - - 0 1"
     val FenPromotion = "7k/R1P5/8/8/8/8/8/K7 w - - 0 1"
     val KnightCheck = "kn6/8/8/8/8/8/8/N6K w - - 0 1"
+    val BlackM3 = "4r2k/5r2/8/8/8/8/K7/8 w - - 0 1"
 }
