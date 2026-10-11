@@ -12,7 +12,7 @@ import scala.collection.mutable.Map
 class ChessGame extends ChessBase {
     val board = Board(boardSize, appSize)
     ////val player1: Player = new Player(Light)
-    //val player2: Player = new SmarterRobotNoPruning(Dark, 3)
+    val player2: Player = new StaticEvalBot(Dark)
 
     var highlightedTile: Option[Tile] = None
     var validMoveHighlights: Seq[Tile] = Seq.empty[Tile]
@@ -24,7 +24,6 @@ class ChessGame extends ChessBase {
         drawHighlightedTile()
         drawValidMoves()
         drawGameOverScreen()
-        //if player2.shade == board.hasTurn then board.tryMove(player2.getMove(board))
     }
 
     def drawGameOverScreen(): Unit = {
@@ -69,6 +68,14 @@ class ChessGame extends ChessBase {
                 validMoveHighlights = board.getMoves(to.piece)
             case _ => ()
         }
+
+        tryP2Move()
+    }
+
+    def tryP2Move(): Unit = {
+        if player2.shade != board.state.hasTurn then return
+        board.movePiece(player2.getMove(board.state))
+        board.refreshVisuals()
     }
 
 

@@ -4,7 +4,7 @@ import engine.graphics.{Rectangle, Position, Black, White}
 import scala.collection.mutable.Map as MMap
 
 class Board(tiles: MMap[Notation, Tile]) {
-    var state: GameState = GameState(Board.FenPromotion)
+    var state: GameState = GameState(Board.FenStart)
     refreshVisuals()
     
     def refreshVisuals(): Unit = {
@@ -35,7 +35,12 @@ class Board(tiles: MMap[Notation, Tile]) {
     def movePiece(from: Tile, to: Tile): Unit = {
         println("moving piece")
         state = state.tryMove(from.name, to.name)
-    } 
+    }
+
+    def movePiece(move: Move): Unit = {
+        println("robot trying move")
+        state = state.tryMove(move.from, move.to)
+    }
 
     def getTiles(): Seq[Tile] = tiles.values.toSeq
 

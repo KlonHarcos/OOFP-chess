@@ -77,6 +77,8 @@ case class GameState(
         else Some(Left("stale-mate"))
     }
 
+    def isGameOver: Boolean = getWinner().isDefined
+
     lazy val allLegalMoves: Set[Move] = allPieces.flatMap{p =>
         val from = piecePositions(p)
         getLegalTargetTiles(Some(p)).map(to => Move(from, to))
@@ -87,17 +89,18 @@ case class GameState(
         case _ => Set.empty[Notation]
     }
 
-    private lazy val allPieces: Set[Piece] = piecePositions.keys.toSet  
+    lazy val allPieces: Set[Piece] = piecePositions.keys.toSet  
 
     def tryMove(from: Notation, to: Notation): GameState = {
         val p = invertedPieceMap.get(from)
         
         p match {
             case Some(piece) if piece.shade == hasTurn && getLegalTargetTiles(p).contains(to)  =>
-                println(piece)
-                println(hasTurn)
+                //println(piece)
+                println("try move is successful")
                 makeMove(piece, to)
-            case _ => this
+            case None => println("No piece at this pos"); this
+            case _ => println(f"${Move(from,to)} is illegal on ${hasTurn.asString}'s turn"); this
         }
     }
 
@@ -245,7 +248,7 @@ case class GameState(
             case pawn @ Pawn(_, _) if pawn.didJump(from, to) => Some(pawn.getEnPassantSqr(from))
             case _ => None
         }
-        this.copy(
+        val res = this.copy(
             hasTurn = hasTurn.other, 
             pieceVision = updatedVisions(from, to, newPMap),
             piecePositions = newPMap,
@@ -254,6 +257,7 @@ case class GameState(
             halfMoveClock = if p.isInstanceOf[Pawn] || isCapture then 0 else halfMoveClock + 1,
             fullMoveClock = if hasTurn == Dark then fullMoveClock + 1 else fullMoveClock
         )
+        res
     }
 
     override def toString(): String = {
