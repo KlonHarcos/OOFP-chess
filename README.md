@@ -10,12 +10,28 @@ I implemented highlights on the UI that show **ONLY** legal moves. My original v
 
 
 # Usage
-to run the project: 
-- to build gradlew: `./gradlew`
-- to build stockfish `./stockfish_build.sh`
-- run the program: `./gradlew run`
+## to run the project: 
+- to build gradlew:
+    ```bash
+    ./gradlew`
+    ```
+- for the StockFish dependency: 
+    - for the git module: 
+    ```bash
+    git submodule init
+    git submodule update
+    ``` 
+    (otherwise make sure to comment out player 2 in *ChessGame.scala*)
+    - to build
+    ```bash
+    ./stockfish_build.sh`
+    ```
+- run the program:
+    ```bash
+    ./gradlew run`
+    ```
 
-to customize the game:
+## to customize the game:
 - opponents can be set in *ChessGame.scala* by setting player2 to one of the Player subclassses and setting the parameter to reflect whether white or black is the AI playing:
     - **RandomBot** (chooses a random move)
     - **StaticEvalBot** (only uses static eval on each of the moves possible)
