@@ -4,12 +4,14 @@ import scala.jdk.CollectionConverters._
 import java.io.{File, PrintWriter, BufferedReader}
 
 class StockFish(shade: Shade, elo: Int = 2200) extends Player(shade: Shade) {
-    val stockFish = StockfishEngine("src/stockfish/Stockfish/src/stockfish", elo)
+    val stockFish = StockfishEngine("src/stockfish_executable", elo)
     def getMove(state: GameState): Move = {
         val bestMove = stockFish.getBestMove(state.toString())
         println(f"the best move is: ${bestMove}")
-        if (bestMove == "(none)") then Move.empty
-        else Move.fromString(bestMove)
+        if (bestMove == "(none)") {
+            stockFish.close()
+            Move.empty
+        } else Move.fromString(bestMove)
     }
     
 }
