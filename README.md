@@ -1,4 +1,5 @@
-![image](chessImg.png) [link](https://youtu.be/E78XY0elu00)
+![image](chessImg.png) 
+[watch gameplay on youtube](https://youtu.be/E78XY0elu00)
 
 # About the Project
 This project is an implementation of the (well known) game, Chess with a fully immutable GameState. That implements the *FEN* standard chess notation, to allow loading of gameStates, and interaction with a chess engine like Stockfish All chess moves are fully working, such as:
