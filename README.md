@@ -9,6 +9,7 @@ I implemented highlights on the UI that show **ONLY** legal moves. My original v
 # Usage
 to run the project: 
 - to build gradlew: `./gradlew`
+- to build stockfish `./stockfish_build.sh`
 - run the program: `./gradlew run`
 
 to customize the game:
