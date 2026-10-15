@@ -13,10 +13,10 @@ I implemented highlights on the UI that show **ONLY** legal moves. My original v
 ## to run the project: 
 - to build gradlew:
     ```bash
-    ./gradlew`
+    ./gradlew
     ```
 - for the StockFish dependency: 
-    - for the git module: 
+    - for the git module:   
     ```bash
     git submodule init
     git submodule update
@@ -24,11 +24,11 @@ I implemented highlights on the UI that show **ONLY** legal moves. My original v
     (otherwise make sure to comment out player 2 in *ChessGame.scala*)
     - to build
     ```bash
-    ./stockfish_build.sh`
+    ./stockfish_build.sh
     ```
 - run the program:
     ```bash
-    ./gradlew run`
+    ./gradlew run
     ```
 
 ## to customize the game:
