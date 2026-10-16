@@ -2,18 +2,41 @@ package game
 
 import engine.graphics.{Rectangle, Position, Black, White}
 import scala.collection.mutable.Map as MMap
+import scala.collection.mutable.Stack
 
 class Board(tiles: MMap[Notation, Tile], startPos: String = Board.FenStart) {
-    var state: GameState = GameState(startPos)
+    val stateStack: Stack[GameState] = Stack(GameState(startPos))
+    def realState: GameState = stateStack.top
+    var currStateIndex: Int = 0
+    def displayedState: GameState = stateStack(currStateIndex)
     refreshVisuals()
+
+    def toggleState(isForward: Boolean): Unit = {
+        if isForward && displayedState == realState then return
+        if !isForward && displayedState == stateStack.last then return
+        if isForward then currStateIndex -= 1
+        else currStateIndex += 1
+        refreshVisuals()
+    }
+
+    def displayRealState(): Unit = {
+        currStateIndex = 0
+        refreshVisuals()
+    }
+
+    def undoMove(): Unit = {
+        if displayedState != realState then return
+        stateStack.pop()
+        displayRealState()
+    }
     
-    def refreshVisuals(): Unit = {
+    private def refreshVisuals(): Unit = {
         Notation.all.foreach(n => placePiece(n, None))
-        val pieceMap = state.piecePositions
+        val pieceMap = displayedState.piecePositions
         pieceMap.keys.foreach(p => placePiece(pieceMap(p), Some(p)))
     }
 
-    def getGameEndMessage: Option[String] = state.getWinner() match {
+    def getGameEndMessage(): Option[String] = displayedState.getWinner() match {
             case None => None
             case Some(either) => either match {
                 case Right(value) => Some(f"$value won by Checkmate!")
@@ -22,22 +45,29 @@ class Board(tiles: MMap[Notation, Tile], startPos: String = Board.FenStart) {
         }
     
 
-    def placePiece(tile: Tile, p: Option[Piece]) = {
+    private def placePiece(tile: Tile, p: Option[Piece]) = {
         tiles(tile.name) = tile.copy(piece = p)
     }
 
-    def placePiece(tile: Notation, p: Option[Piece]) = {
+    private def placePiece(tile: Notation, p: Option[Piece]) = {
         tiles(tile) = tiles(tile).copy(piece = p)
     }
 
-    def getMoves(piece: Option[Piece]): Seq[Tile] = state.getLegalTargetTiles(piece).map(tiles(_)).toSeq
+    def getMoves(piece: Option[Piece]): Seq[Tile] = displayedState.getLegalTargetTiles(piece).map(tiles(_)).toSeq
 
     def movePiece(from: Tile, to: Tile): Unit = {
-        state = state.tryMove(from.name, to.name)
+        if displayedState != realState then return
+        val newState = realState.tryMove(from.name, to.name)
+        if newState != realState then 
+            stateStack.push(newState)
+            refreshVisuals()
     }
 
     def movePiece(move: Move): Unit = {
-        state = state.tryMove(move.from, move.to)
+        val newState = realState.tryMove(move.from, move.to)
+        if newState != realState then 
+            stateStack.push(newState)
+            refreshVisuals()
     }
 
     def getTiles(): Seq[Tile] = tiles.values.toSeq

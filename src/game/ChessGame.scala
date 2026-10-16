@@ -2,6 +2,8 @@ package game
 
 import engine.ChessBase
 import processing.core.PApplet
+import processing.event.KeyEvent
+import java.awt.event.KeyEvent._
 import engine.graphics.Rectangle
 import engine.graphics.Position
 import engine.graphics.{HighlightGreen, LowHighlightGreen, Red}
@@ -30,7 +32,7 @@ class ChessGame extends ChessBase {
     }
 
     def drawGameOverScreen(): Unit = {
-        board.getGameEndMessage match {
+        board.getGameEndMessage() match {
             case None => ()
             case Some(value) =>
                 fill(Red)
@@ -64,7 +66,7 @@ class ChessGame extends ChessBase {
         val currHighlight: Option[Tile] = highlightedTile 
         (currHighlight, board.getTile(mouse)) match {
             case (Some(from), Some(to)) if from == to => clearHighlights()
-            case (Some(from), Some(to)) => clearHighlights(); board.movePiece(from, to); board.refreshVisuals(); drawBoard()
+            case (Some(from), Some(to)) => clearHighlights(); board.movePiece(from, to); drawBoard()
             case (_, Some(to)) => 
                 highlightedTile = Some(to)
                 validMoveHighlights = board.getMoves(to.piece)
@@ -74,14 +76,24 @@ class ChessGame extends ChessBase {
         lastClick = System.currentTimeMillis()
     }
 
+    override def keyPressed(event: KeyEvent): Unit = {
+        event.getKeyCode match {
+            case VK_SPACE => board.displayRealState()
+            case VK_LEFT  => board.toggleState(false)
+            case VK_RIGHT => board.toggleState(true)
+            case VK_BACK_SPACE => board.undoMove(); lastClick = System.currentTimeMillis()
+            case _        => ()
+        }
+
+    }
+
     def tryP2Move(): Unit = {
         if (System.currentTimeMillis() - lastClick) < MaxWait then return
         for (p2 <- player2) {
-            if (p2.shade == board.state.hasTurn) {
-                val move = p2.getMove(board.state)
+            if (p2.shade == board.realState.hasTurn) {
+                val move = p2.getMove(board.realState)
                 if (move != Move.empty) {
                     board.movePiece(move)
-                    board.refreshVisuals()
                 }
             }
         }

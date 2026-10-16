@@ -31,6 +31,12 @@ I implemented highlights on the UI that show **ONLY** legal moves. My original v
     ./gradlew run
     ```
 
+## How to play:
+- mouse: to move pieces
+- left/right arrows: to explore past gameStates move by move
+- space: to reset the game to the present
+- backspace: undo the last move( if playing against Stockfish or other, you can undo 2 moves in short succession to be able to change the last move)
+
 ## to customize the game:
 - opponents can be set in *ChessGame.scala* by setting player2 to one of the Player subclassses and setting the parameter to reflect whether white or black is the AI playing:
     - **RandomBot** (chooses a random move)
