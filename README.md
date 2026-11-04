@@ -55,6 +55,3 @@ when loading the board, any legal *FEN* chess position can be loaded in as a str
 - the MiniMax algorithm and other inspirations from [Sebastian Lague](https://www.youtube.com/watch?v=l-hh51ncgDI)'s series on Chess
 - some ideas from the [ChessProgramming Wiki](https://chessprogramming.org/)
 - The [Stockfish](https://github.com/official-stockfish/Stockfish) engine to play agianst
-- **AI USAGE:**
-    - For code related issues, to understand Scala concepts and syntax generative AI was used synchronously with StackOverflow
-    - For understanding and implementing the ProcessBuilder for StockFish i took a generic input output implementation generated and modified it to fit with the needs of the Stockfish CLI
